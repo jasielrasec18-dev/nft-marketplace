@@ -1,0 +1,70 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+:root {
+  color-scheme: dark;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --background: #16100c;
+  --foreground: #faf5ef;
+  --card: #241a13;
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --primary: #f5ad48;
+  --primary-foreground: #201207;
+  --secondary: #38271c;
+  --secondary-foreground: var(--foreground);
+  --muted: var(--secondary);
+  --muted-foreground: #c6b6a6;
+  --accent: var(--secondary);
+  --accent-foreground: var(--foreground);
+  --destructive: #ff9c92;
+  --border: #6f5846;
+  --input: var(--border);
+  --ring: var(--primary);
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply m-0 min-w-0 bg-background text-foreground; }
+  button, a, input, select, textarea { @apply focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring; }
+  ::selection { @apply bg-primary text-primary-foreground; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
