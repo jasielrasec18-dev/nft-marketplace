@@ -1,10 +1,12 @@
 import { setupWorker } from 'msw/browser'
 import { env } from '@/app/env'
-import { handlers } from './handlers'
+import { createHandlers } from './handlers'
+import { createMockDatabase } from './db/mock-database'
 
-export const worker = setupWorker(...handlers)
-export function startMockWorker() {
-  return worker.start({
+export async function startMockWorker() {
+  const store = await createMockDatabase(localStorage, { scenario: env.mockScenario })
+  const worker = setupWorker(...createHandlers(store, env.apiBaseUrl, env.apiTimeoutMs + 5000))
+  await worker.start({
     serviceWorker: { url: `${import.meta.env.BASE_URL}mockServiceWorker.js` },
     onUnhandledRequest(request, print) {
       const apiPath = new URL(env.apiBaseUrl, window.location.origin).pathname.replace(/\/$/, '')
@@ -12,4 +14,6 @@ export function startMockWorker() {
       if (requestPath === apiPath || requestPath.startsWith(`${apiPath}/`)) print.error()
     },
   })
+  if (import.meta.hot) import.meta.hot.dispose(() => worker.stop())
+  return worker
 }

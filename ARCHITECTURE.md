@@ -1,93 +1,103 @@
-# Arquitetura — fundação (fases 0 e 1)
+# Arquitetura — fundação e Mock Backend
 
-## Escopo e organização
+## Escopo atual
 
-A implementação atual cria infraestrutura, contratos e uma página mínima. A separação prevista é:
+Fases 0 e 1 preservadas; fase 2 adiciona backend simulado, persistência e cenários. Nenhuma tela de negócio foi criada.
 
 ```text
-UI → hooks da feature → TanStack Query → Axios → REST → MSW → MockDatabase
+UI → hooks/features → TanStack Query → Axios → REST → MSW → MockDatabase
 ```
 
-Nenhum componente, hook ou query function contém respostas fictícias. Os handlers estão vazios: os comportamentos de negócio serão implementados na fase 2.
+Mocks são carregados dinamicamente apenas quando habilitados. As features não importam fixtures nem MockDatabase; essa fronteira também é protegida pelo ESLint. O QueryClient não é importado pelos mocks.
 
-`features/` reserva auth, catalog, nft, favorites, cart, checkout, orders, profile e wallets. Os contratos compartilhados ficam em `contracts/`; componentes reutilizáveis em `components/`. Diretórios vazios têm `.gitkeep` para sobreviver ao checkout. Não foram criadas abstrações de storage ou idempotência sem uma implementação de negócio para exercitá-las.
+## Estrutura
 
-## Router e providers
+- `contracts/`: DTOs compartilhados e validação de entradas; criado `requests.ts` para os payloads faltantes e `mock-control.ts` para controles tipados.
+- `mocks/fixtures/`: dois usuários, 32 NFTs e recursos iniciais determinísticos.
+- `mocks/db/`: tipos internos, schema persistido, transações e operações de carrinho/catálogo/sessão/cotação/pedido.
+- `mocks/handlers/`: adaptação HTTP por recurso; middleware comum de latência, falhas e erros.
+- `mocks/scenarios/config.ts`: configuração base e pequenas variações; não duplica handlers.
+- `mocks/utils/`: relógio, IDs, hash de senha e respostas.
+- `tests/`: testes existentes mais integração HTTP e persistência no navegador.
 
-TanStack Router usa declaração em código, adequada à pequena árvore inicial e sem exigir geração de arquivos. A raiz recebe os serviços tipados, tem layout, estado de erro e 404. A rota `/` valida busca com Zod; entrada opcional e saída normalizada são tipos distintos. Busca, coleção, faixa ETH, ordenação e página já possuem contrato. Aplicar filtros e reiniciar a página serão responsabilidades da feature de catálogo.
+Não foram adicionadas dependências. As alterações mínimas da fundação foram: configuração injetável no cliente Axios para testes Node; createdAt no contrato NFT para ordenação estável; validação de todos os nomes de cenário na env. Os caminhos REST agora seguem o pedido da fase 2: /auth/session, POST /favorites/:nftId e /quote.
 
-Há uma instância de serviços por aplicação: Axios, QueryClient e Socket.IO. `AppProviders` disponibiliza os serviços e o QueryClient. Hooks de feature usarão `useServices()`; componentes visuais não deverão chamar Axios diretamente. O bootstrap aguarda MSW quando habilitado, inclusive em build de demonstração.
+## MockDatabase e persistência
 
-Rotas privadas, recuperação de sessão e redirecionamento ao fluxo anterior serão adicionados junto à autenticação. As futuras URLs são `/nfts/$nftId`, `/cart`, `/checkout`, `/orders/$orderId`, `/login`, `/register`, `/account/profile` e `/account/wallets`. Não existem telas falsas para elas nesta fase.
+A base central tem usuários, sessões, NFTs, favoritos, carrinhos, perfis, carteiras, cupons, cotações, pedidos, registros de idempotência e agendamentos de pagamento. Carrinhos persistem somente referências de NFT/edição/quantidade; as respostas hidratam o NFT atual. Isso evita preços e estoques divergentes entre listagem, detalhe, carrinho e cotação.
 
-## Contratos REST propostos
+Transações entram numa fila por instância, copiam a base, executam a operação, persistem e só então publicam o novo estado. Uma exceção ou falha de armazenamento descarta a cópia. Concorrência de cadastro, reserva de estoque e chave de idempotência é serializada, sem um repository/service/use-case por endpoint.
 
-Os tipos estão implementados; os endpoints abaixo são o plano para os handlers da fase 2, não APIs já funcionais. Prefixo comum: `/api`.
+`createPersistence` concentra acesso ao storage. O browser usa localStorage; testes Node injetam memória. Um schema Zod verifica toda a estrutura carregada, incluindo valores ETH e estados de pedido. Versões incompatíveis ou JSON corrompido voltam às fixtures; erros de gravação não retornam sucesso.
 
-| Recurso | Endpoints planejados | Contratos |
-| --- | --- | --- |
-| Sessão/conta | GET /session, POST /auth/login, /auth/register, /auth/logout | Account, Session, LoginInput, RegisterInput |
-| NFTs | GET /nfts, GET /nfts/:id | NFT, NFTEdition, CatalogSearch, Paginated |
-| Favoritos | GET /favorites, PUT/DELETE /favorites/:nftId | Favorites |
-| Carrinho | GET /cart, POST /cart/items, PATCH/DELETE /cart/items/:id | Cart, CartItem, CartOwner |
-| Cotação | POST /quotes | QuoteInput, Quote, QuoteLine, QuoteTotals |
-| Pedidos | POST /orders, GET /orders/:id | CreateOrderInput, Order, OrderSnapshot |
-| Perfil | GET/PATCH /profile, PUT /profile/avatar, PATCH /profile/password | Profile, AvatarInput, PasswordChangeInput |
-| Carteiras | GET/POST /wallets, PATCH /wallets/:id | Wallet, WalletInput |
+`store.reset(input)` é a operação interna de reset; HTTP expõe POST /api/__mock/reset. Gera fixtures novas, limpa cenários/contadores/relógio/recursos, invalida sessões e impede que requests atrasadas da geração anterior alterem a base restaurada. O endpoint também remove cookies de sessão e visitante.
 
-Erros usam `{ code, message, fieldErrors? }`; campos inválidos, sessão, permissão, ausência, conflitos e falhas transitórias terão status HTTP apropriados. Datas usam strings ISO. Quantidades e versões são números inteiros. O backend simulado validará payloads; os contratos TypeScript não substituem validação na fronteira HTTP.
+O banco é local à instância: a fila não coordena abas ou navegadores diferentes. Persistência após refresh é suportada e testada; concorrência entre abas não é apresentada como backend compartilhado.
 
-## HTTP, cancelamento e sessão
+## Sessão e isolamento
 
-Axios centraliza prefixo, timeout, credenciais e normalização de erros. Cada futura query deve repassar o `signal` recebido do TanStack Query ao Axios. Cancelamentos continuam como cancelamentos, não viram mensagens de falha.
+Cookies jungle_session e jungle_guest representam identidades distintas. Seus valores são UUIDs opacos, impedindo colisões após reset e adivinhação de IDs sequenciais. A aleatoriedade limita-se aos tokens de identidade; fixtures, preços, ordenação, cenários e IDs de recursos de negócio usam dados/contadores reproduzíveis.
 
-HTTP 401 chama a limpeza central: desconecta o socket, remove listeners, cancela consultas privadas e de sessão, remove cache privado e limpa o cache de mutations. Dados públicos e o carrinho visitante permanecem. A UI de login e a proteção de rota serão integradas na fase 6. Em mutations futuras, callbacks assíncronos devem verificar a identidade da sessão antes de aplicar efeitos, pois limpar um cache não cancela uma operação já enviada.
+A sessão possui token, userId e expiresAt, persistidos na base. GET /auth/session retorna null sem cookie; tokens inválidos ou expirados retornam 401. Login substitui a sessão do mesmo cliente; logout a revoga. Senha alterada invalida as outras sessões da conta.
 
-Senhas não entram nos contratos de resposta nem em storage. Os schemas de senha representam somente entrada de formulário/HTTP. Hash e persistência de credenciais fictícias pertencem ao backend simulado futuro.
+Somente o usuário obtido da sessão determina a propriedade dos recursos. Corpo da requisição não escolhe userId/owner. IDs de outro usuário retornam 404 em carrinho, cotação, carteira e pedido. Respostas nunca incluem hash/salt. SHA-256 com salt serve apenas como representação simulada; não é um esquema de autenticação de produção.
 
-## Política do TanStack Query
+MSW entrega cookies resolvidos ao handler. Um WeakMap associa esses metadados ao Request durante a operação, pois o browser não permite reescrever livremente o header Cookie. Os testes Node usam jars separados com cookies explícitos, evitando que o cookie store interno do MSW faça dois clientes parecerem uma sessão única. Cookies da simulação são acessíveis ao JavaScript; não são HttpOnly.
 
-- Consultas: `staleTime = 30 s`, `gcTime = 5 min`.
-- Refetch de dados obsoletos ao montar (padrão do Query), recuperar foco e reconectar.
-- Até duas novas tentativas apenas para rede, timeout e HTTP 5xx. Atrasos de 1 e 2 segundos; teto de 5 segundos.
-- Sem retry para cancelamento, erro de programação e HTTP 4xx.
-- Mutations sem retry automático. Reenvio de pedido precisará manter a mesma chave de idempotência.
-- Quote e session poderão sobrescrever os tempos quando as respectivas features forem implementadas; uma cotação expirada nunca poderá ser usada para comprar.
+## Carrinho e ETH
 
-Chaves públicas: `['nfts', 'list', filters]` e `['nfts', 'detail', id]`. Chaves privadas têm prefixo `['private', userId]`; favoritos, perfil, carteiras, pedidos, carrinho e cotações ficam sob esse prefixo. Carrinho visitante: `['guest', guestId, 'cart']`. Cotações incluem parâmetros de entrada e versão do carrinho.
+Visitantes também usam os endpoints de carrinho. O login/cadastro mescla o carrinho visitante uma vez e esvazia a origem. A mesclagem preserva intenção de compra, inclusive quantidades que ficaram indisponíveis; a cotação exige correção dessas quantidades em vez de descartá-las silenciosamente.
 
-A fase de favoritos implementará cancelamento, snapshot, alteração otimista, rollback e invalidação. Não há mutation otimista fictícia nesta base.
+Handlers validam quantidade positiva inteira, NFT, edição e estoque. Alterações de catálogo usam updateNftPrice/updateNftAvailability dentro de uma transação, incrementam versão e persistem; nenhuma operação escreve no cache da UI.
 
-## ETH, cotação e pedidos
+ETH usa strings decimais marcadas por Zod, com até 18 casas. Soma e multiplicação reutilizam as utilities existentes. Desconto percentual usa construtor isolado de big.js, arredondado para baixo até um wei. Não existe Number/parseFloat como fonte financeira.
 
-`EthAmount` é uma string validada e marcada por Zod: não negativa, sem notação exponencial, com até 18 casas decimais. `big.js` tem construtor isolado e modo estrito. Soma, subtração, multiplicação por quantidade e comparação não convertem ETH para `number`. Arredondamento acontece apenas na apresentação e nunca altera a fonte de verdade.
+Quote valida carrinho/versão, preço, estoque, cupom e rede. Taxas simuladas: 0.005 ETH para Ethereum e 0.001 ETH para Polygon. VALID10 desconta 10% do subtotal; taxas não recebem desconto. Valores financeiros são retornados pela API, sem regras duplicadas na interface. Quote expira em cinco minutos.
 
-Regras de desconto, taxa e total pertencerão à cotação da API. O contrato guarda itens, versões, cupom, rede, totais e expiração. Criar pedido informa quoteId e quoteVersion; a simulação deverá revalidar e exigir nova revisão quando houver mudança.
+## Pedidos, reserva e idempotência
 
-O pedido já tem snapshot somente leitura de itens, preços, totais, coletor, rede e endereço. Sua implementação deverá copiar esses valores, sem referências mutáveis ao catálogo. Os estados são pending, confirmed e declined. O futuro POST /orders aceitará `Idempotency-Key`; retry após timeout usará a mesma chave e payload diferente produzirá conflito.
+POST /orders exige Idempotency-Key e consulta o registro por usuário antes de revalidar a cotação. O fingerprint é uma serialização de campos em ordem explícita. Mesma chave e payload retornam o pedido existente (200), mesmo após timeout/refresh; payload diferente retorna 409. O primeiro envio retorna 201. Cotação já utilizada não cria outra compra com uma chave nova.
 
-## MSW e tempo real
+Antes da criação, o backend revalida cotação, itens, versões, cupom e carteira/rede. Uma assinatura de campos explícitos compara cotações independentemente da ordem das propriedades JSON. Mudanças exigem nova cotação; não são aceitas silenciosamente.
 
-`src/mocks/browser.ts` inicia o worker versionado em `public/`. Importação dinâmica separa o código dos mocks. Assets e requests alheios ao prefixo REST passam normalmente; endpoints REST sem handler geram erro explícito.
+A transação cria pedido pending e reserva estoque. O snapshot copia itens, edição, quantidade, preços, subtotais, desconto, taxa, total, coletor, endereço e rede. Catálogo atualizado posteriormente não altera o recibo.
 
-A MockDatabase, persistência local, reset e cenários ainda não existem. A validação de ambiente aceita somente `default` para evitar aparentar cenários implementados. Serão adicionados progressivamente com testes.
+Agendamentos de pagamento persistem com dueAt e outcome. A próxima chamada REST reconcilia agendamentos vencidos; avançar o relógio ou usar o endpoint de settlement também realiza a transição. Isso permite refresh enquanto pending sem timers perdidos. A fase realtime conectará as operações ao protocolo Socket.IO.
 
-Socket.IO é o cliente real, tipado para `nft.updated` e `order.updated`. Cada evento tem eventId, versão e data; pedidos também identificam o usuário. O transporte previsto é WebSocket para integração futura com MSW e um binding compatível com Socket.IO. Não há conexão automática, servidor externo, callbacks simulando socket ou atualização direta de cache pelos mocks.
+Confirmed e declined são terminais. Confirmação remove somente as quantidades compradas do carrinho e atribui uma referência SIMULATED; recusa preserva itens e libera a reserva. Repetir o mesmo estado não repete efeitos. A fila impede venda simultânea da última unidade para dois pedidos.
 
-A implementação futura deverá descartar eventos duplicados/antigos, limpar listeners ao encerrar a sessão, invalidar cotações ao mudar NFT e reconciliar recursos ativos via REST após reconectar. A compatibilidade do binding será validada nessa etapa.
+Em order-timeout, a resposta é atrasada **fora da transação, depois do commit**. Assim o retry pode encontrar o pedido imediatamente, mesmo enquanto a resposta inicial ainda está pendente.
 
-## Interface e qualidade
+## Cenários e relógio
 
-Tailwind v4 usa plugin Vite e tokens CSS. shadcn/ui foi configurado manualmente para projeto existente; o Button usa Slot, CVA e cn, com tokens locais. As demais primitivas virão na fase 3. O padrão foi consultado na [documentação shadcn/ui](https://ui.shadcn.com/docs/installation/vite).
+A env seleciona o cenário inicial; a escolha persistida sobrevive ao refresh. O controle HTTP pode trocar cenário sem apagar os dados ou resetar tudo.
 
-A página mínima usa landmarks, idioma pt-BR, título, descrição, skip link e foco visível. Movimento reduzido é respeitado. Cores são provisórias da descrição, não extraídas do Figma; fontes de sistema evitam dependência externa nesta base.
+Latência fica no middleware: default 120 ms, slow-network 1200 ms, variable-latency alterna 1200/200 ms por operação. Contadores persistidos tornam as sequências reproduzíveis. Testes podem sobrescrever a latência e fixar o relógio. Date.now existe apenas na utility de relógio; timestamps de fixtures são estáveis.
 
-Playwright cobre precisão monetária, validação de URL, isolamento e limpeza de cache, retries, erros e smoke tests de boot/404/teclado em Chromium a 390, 768 e 1440 px. Testes de compra, autenticação, Socket.IO e baselines visuais serão adicionados com as features correspondentes.
+Falha de conexão usa HttpResponse.error. HTTP 500, HTTP 503 e timeout são cenários distintos. Os controles ficam fora da injeção de falhas para permitir recuperação. Price-changed/sold-out aplicam uma alteração persistida antes da tentativa de pedido ou da segunda cotação. O erro da compra não desfaz essa alteração do cenário.
 
-Lighthouse e code splitting de páginas completas ficam para a fase de qualidade. Não existem auditorias, scores nem publicação nesta entrega de infraestrutura.
+Detalhes de todos os cenários e controles: [docs/MOCK-API.md](docs/MOCK-API.md).
 
-## Verificação desta entrega
+## Router, Query e Axios
 
-TypeScript, ESLint sem warnings, build padrão, build com mocks e os 16 testes Playwright passaram. Os smoke tests verificam o worker ativo e os viewports de 390, 768 e 1440 px. No ambiente restrito deste workspace o Chromium não inicializou corretamente; os testes passaram com execução autorizada fora dessa restrição.
+As políticas existentes permanecem: staleTime 30 s, gcTime 5 min, refetch quando dados obsoletos recuperam foco/conexão e até dois retries em consultas para rede/timeout/5xx. Não há retry automático de mutations. Cancelamentos Axios não viram erros de UI.
 
-O Vite reportou o chunk principal de aproximadamente 541 kB (171 kB gzip), acima do aviso padrão de 500 kB. O bootstrap dos mocks gera um chunk separado de aproximadamente 408 kB (153 kB gzip), carregado sob demanda. Isso é uma pendência de performance para revisão das dependências e divisão de código nas próximas fases; os limites do warning não foram aumentados e nenhuma meta Lighthouse foi considerada atingida.
+Chaves públicas incluem filtros ou NFT ID. Chaves privadas usam ['private', userId]; visitante usa ['guest', guestId, 'cart']. HTTP 401 limpa consultas privadas/sessão, mutations e listeners do socket. A UI de autenticação e callbacks de mutations ainda deverão proteger a identidade da sessão antes de aplicar efeitos tardios.
+
+Rotas privadas, busca visual, optimistic updates e sincronização do QueryClient serão implementadas junto às features; não há demonstrações de sucesso falsas nesta fase.
+
+## Testes e limites
+
+A suíte usa Playwright existente. Testes Node fazem Axios → setupServer MSW → MockDatabase, com base em memória isolada. Testes Chromium fazem Axios → service worker → localStorage, verificando sessão/pedido após refresh e confirmação pelo relógio nos três viewports.
+
+Cobertura inclui login/cadastro, isolamento, filtros/paginação, carrinho, cupons/ETH, estoque concorrente, idempotência/conflito, timeout após commit, snapshot, pagamento recusado, expiração, cenários, resposta fora de ordem, reset com mutation pendente e erro de persistência.
+
+Endpoints /__mock são ferramentas da simulação, não APIs administrativas de produção. Só existem com MSW habilitado e não conectam a dados externos.
+
+Design System completo, telas, eventos Socket.IO, regressão visual e Lighthouse ficam para suas fases. A integração de avatar nesta etapa valida formato/tamanho do data URL; a seleção/decodificação de arquivos será feita na feature. Os assets são provisórios. O warning de bundle principal acima de 500 kB permanece registrado para a etapa de performance.
+
+## Resultado de verificação
+
+Fase 2: 42 testes aprovados na suíte completa e 4 testes de reset aprovados na verificação final específica. Typecheck, lint sem warnings, build padrão e build:mock passaram. O teste de navegador comprova Axios/MSW, cookies, localStorage, refresh com pedido pending e confirmação com relógio controlado em 390, 768 e 1440 px. A execução do Chromium exigiu permissão fora do ambiente restrito.
+
+Bundle principal do build mock: aproximadamente 542 kB (171 kB gzip). Mocks: chunk sob demanda de aproximadamente 456 kB (170 kB gzip). O warning de 500 kB foi preservado; Lighthouse não foi executado nesta fase.

@@ -19,6 +19,7 @@ export interface NFT {
   editions: NFTEdition[]
   availableQuantity: number
   version: number
+  createdAt: string
 }
 
 export const catalogSearchSchema = z.object({

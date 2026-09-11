@@ -1,11 +1,10 @@
 import axios from 'axios'
-import { env } from '@/app/env'
 import { normalizeApiError } from './errors'
 
-export function createApiClient(onUnauthorized?: () => void) {
+export function createApiClient(options: { baseURL: string; timeoutMs: number }, onUnauthorized?: () => void) {
   const client = axios.create({
-    baseURL: env.apiBaseUrl,
-    timeout: env.apiTimeoutMs,
+    baseURL: options.baseURL,
+    timeout: options.timeoutMs,
     withCredentials: true,
     headers: { Accept: 'application/json' },
   })

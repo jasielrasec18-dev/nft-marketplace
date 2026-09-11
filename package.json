@@ -16,7 +16,8 @@
     "test:foundation": "playwright test --project=foundation",
     "test:report": "playwright show-report",
     "msw:init": "msw init public --save",
-    "check": "npm run typecheck && npm run lint && npm run build"
+    "check": "npm run typecheck && npm run lint && npm run build",
+    "test:mocks": "playwright test --project=mock-backend"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

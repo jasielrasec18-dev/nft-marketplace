@@ -23,4 +23,12 @@ export default defineConfig([
     files: ['src/components/ui/**/*.tsx'],
     rules: { 'react-refresh/only-export-components': ['warn', { allowConstantExport: true }] },
   },
+  {
+    files: ['src/{api,app,components,features,hooks,routes}/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{ group: ['@/mocks/**', '**/mocks/**'], message: 'Consuma os mocks via HTTP/Axios; não importe a implementação do backend na aplicação.' }],
+      }],
+    },
+  },
 ])
