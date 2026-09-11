@@ -347,3 +347,37 @@ test('storage quota failure rolls back the transaction instead of returning fals
   await expect(persisted.transaction((db) => { db.favorites['user-1'] = [] })).rejects.toThrow('Quota exceeded')
   expect(persisted.read().favorites['user-1']).toEqual(['nft-001'])
 })
+
+test('catalog collection facets come from the entire database, independent of filters and pages', async () => {
+  const response = (await api.get<import('../src/contracts/nft').NFTListResponse>('/nfts?q=ape&priceMax=2&page=2')).data
+  expect(response.total).toBe(4)
+  expect(response.items).toHaveLength(0)
+  expect(response.collections).toEqual([
+    { id: 'cosmic', count: 8 }, { id: 'golden', count: 8 },
+    { id: 'jungle', count: 8 }, { id: 'pixel', count: 8 },
+  ])
+  await api.patch('/__mock/scenario', { scenario: 'empty' })
+  const empty = (await api.get<import('../src/contracts/nft').NFTListResponse>('/nfts')).data
+  expect(empty.total).toBe(0)
+  expect(empty.collections.every((collection) => collection.count === 0)).toBe(true)
+})
+
+test('retired template artwork migrates without resetting accounts, prices or order snapshots', async () => {
+  await store.transaction((db) => {
+    const nft = db.nfts.find((item) => item.id === 'nft-001')
+    if (!nft) throw new Error('Missing deterministic NFT')
+    nft.imageUrl = '/assets/hero-OLD.png'
+    nft.gallery = ['/assets/hero-OLD.png', '/custom-art.svg']
+  })
+  await login(api)
+  const quote = await quoteFor(api)
+  await api.post<Order>('/orders', orderInput(quote), { headers: { 'Idempotency-Key': 'artwork-migration' } })
+  const before = store.read()
+  const restored = (await createMockDatabase(storage)).read()
+  expect(restored.nfts[0]?.imageUrl).toBe('/artwork/golden.svg')
+  expect(restored.nfts[0]?.gallery).toEqual(['/artwork/golden.svg', '/custom-art.svg'])
+  expect(restored.nfts[0]?.priceEth).toBe(before.nfts[0]?.priceEth)
+  expect(restored.sessions).toEqual(before.sessions)
+  expect(restored.users).toEqual(before.users)
+  expect(restored.orders).toEqual(before.orders)
+})

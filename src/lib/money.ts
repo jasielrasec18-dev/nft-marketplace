@@ -2,7 +2,6 @@ import Big from 'big.js'
 import { ethAmountSchema } from '@/contracts/common'
 import type { EthAmount } from '@/contracts/common'
 
-// Isolated constructor: no global rounding settings leak to other consumers.
 const Decimal = Big()
 Decimal.strict = true
 
@@ -33,7 +32,6 @@ export function compareEth(left: EthAmount, right: EthAmount): -1 | 0 | 1 {
   return decimal(left).cmp(decimal(right))
 }
 
-// Display-only rounding; API values retain all 18 supported decimal places.
 export function formatEth(value: EthAmount, decimalPlaces = 6): string {
   if (!Number.isInteger(decimalPlaces) || decimalPlaces < 0 || decimalPlaces > 18) {
     throw new RangeError('Use de 0 a 18 casas decimais.')

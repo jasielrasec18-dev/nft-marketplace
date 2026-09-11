@@ -3,7 +3,6 @@ import type { AppServices } from '@/app/services'
 import { catalogSearchSchema } from '@/contracts/nft'
 import { AppLayout } from '@/components/layout/app-layout'
 import { RouteError } from '@/components/feedback/route-error'
-import { HomePage } from '@/routes/home-page'
 import { NotFoundPage } from '@/routes/not-found-page'
 
 const rootRoute = createRootRouteWithContext<AppServices>()({
@@ -15,14 +14,20 @@ const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   validateSearch: (search: Record<string, unknown> & SearchSchemaInput) => catalogSearchSchema.parse(search),
-  component: HomePage,
+  component: lazyRouteComponent(() => import('@/routes/home-page'), 'HomePage'),
+})
+const nftRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/nfts/$nftId',
+  validateSearch: (search: Record<string, unknown> & SearchSchemaInput) => catalogSearchSchema.parse(search),
+  component: lazyRouteComponent(() => import('@/routes/nft-placeholder-page'), 'NFTPlaceholderPage'),
 })
 const developmentRoutes = import.meta.env.DEV ? [createRoute({
   getParentRoute: () => rootRoute,
   path: '/design-system',
   component: lazyRouteComponent(() => import('@/routes/design-system-page'), 'DesignSystemPage'),
 })] : []
-const routeTree = rootRoute.addChildren([homeRoute, ...developmentRoutes])
+const routeTree = rootRoute.addChildren([homeRoute, nftRoute, ...developmentRoutes])
 
 export function createAppRouter(services: AppServices) {
   return createRouter({

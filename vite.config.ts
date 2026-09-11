@@ -6,6 +6,8 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // Pre-transform lazy entry pages so development starts without import waterfalls.
+  server: { warmup: { clientFiles: ['./src/routes/home-page.tsx', './src/routes/design-system-page.tsx'] } },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

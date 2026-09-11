@@ -1,6 +1,6 @@
 # NFT Marketplace — Jungle Gaming
 
-Implementação do [Frontend Challenge da Jungle Gaming](https://github.com/junglegaming/frontend-challenge), com React e TypeScript. **Estado atual: fases 0 a 3 — fundação, backend simulado e Design System.** A interface continua com Home mínima e 404; as telas de negócio serão implementadas nas próximas fases.
+Implementação do [Frontend Challenge da Jungle Gaming](https://github.com/junglegaming/frontend-challenge), com React e TypeScript. **Estado atual: fases 0 a 4 — fundação, backend simulado, Design System e Home/Catálogo.** A Home consome a API simulada; a rota de detalhe ainda é um placeholder.
 
 O enunciado oficial define os comportamentos; o [Figma](https://www.figma.com/design/Ff0SksUi7UFtPWUO8kyNtw/Frontend-Challenge?node-id=0-1&p=f) define a referência visual.
 
@@ -24,7 +24,7 @@ Não depende de backend externo, blockchain ou gateway. Os handlers MSW intercep
 
 Cada conta começa com um favorito, um item no carrinho, perfil e carteira Ethereum próprios. Senhas são persistidas somente como hash SHA-256 com salt de demonstração. Essas credenciais e todo o armazenamento são exclusivamente simulados.
 
-Há 32 NFTs, quatro coleções, duas edições por NFT e variedade de preços/estoques. A imagem local do template é provisória. Cupons: `VALID10` (10%), `EXPIRED10` (expirado); qualquer código desconhecido é inválido.
+Há 32 NFTs, quatro coleções, duas edições por NFT e variedade de preços/estoques. As quatro ilustrações vetoriais locais são assets de demonstração, não imagens oficiais do Figma. Cupons: `VALID10` (10%), `EXPIRED10` (expirado); qualquer código desconhecido é inválido.
 
 ## Ambiente
 
@@ -115,15 +115,15 @@ src/
   app/           # router, providers, query, env e serviços
   api/           # Axios centralizado e erros
   contracts/     # DTOs e schemas compartilhados
-  features/      # diretórios reservados para as próximas fases
+  features/      # catálogo: API, hooks e componentes de descoberta
   components/    # UI, layout e feedback existentes
-  routes/        # Home mínima e 404
+  routes/        # Home/Catálogo, placeholder de detalhe, showcase dev e 404
   mocks/         # fixtures, database, handlers, cenários e persistência
   lib/           # ETH preciso e cn
 tests/           # fundação, backend HTTP e smoke/persistência em navegador
 ```
 
-A UI consumirá `TanStack Query → Axios → REST → MSW`. Fixtures não são importadas por componentes, hooks, páginas ou serviços de aplicação.
+A Home consome `TanStack Query → Axios → REST → MSW`. Fixtures não são importadas por componentes, hooks, páginas ou serviços de aplicação.
 
 Tecnologias configuradas: React, TypeScript, Vite, TanStack Router/Query, Axios, Tailwind v4, shadcn/ui, MSW, Playwright, Zod e big.js. React Hook Form/resolvers, Lucide e socket.io-client estão preparados para as próximas features.
 
@@ -137,7 +137,7 @@ A simulação é local a uma instância da aplicação; não é um servidor comp
 
 Para testar o build: `npm run build:mock` e `npm run preview`. O deploy final precisará servir `dist/` por HTTPS e tratar URLs de páginas como SPA. Publicação e Lighthouse pertencem às fases posteriores.
 
-**Próxima etapa: FASE 4 — Home / Catálogo.**
+**Próxima etapa: FASE 5 — NFT Detail.**
 
 ## Validação da fase 2
 
@@ -145,7 +145,7 @@ TypeScript e ESLint passaram; builds padrão e com mocks concluídos. A suíte c
 
 ## Design System — Fase 3
 
-Execute `npm run dev:mock` e abra `http://localhost:5173/design-system` (ou a porta indicada pelo Vite). A demonstração é lazy e existe somente em desenvolvimento; `/` continua sendo a Home temporária. Os exemplos não fazem chamadas HTTP, autenticação, favoritos persistidos ou compras.
+Execute `npm run dev:mock` e abra `http://localhost:5173/design-system` (ou a porta indicada pelo Vite). A demonstração é lazy e existe somente em desenvolvimento; `/` apresenta a Home/Catálogo. Os exemplos não fazem chamadas HTTP, autenticação, favoritos persistidos ou compras.
 
 A base inclui Button, Input, Label/FormField, Select, Checkbox, RadioGroup, Dialog, Sheet, Tabs, Separator, Badge, feedback contextual, NFTCard, ETHPrice e QuantitySelector. Há skeletons de card, grade, detalhe e resumo, com shimmer que respeita reduced motion. PageContainer, Header/Footer e AppLayout compartilham a identidade KURIO.
 
@@ -153,8 +153,32 @@ Foram analisados os 23 screenshots em `src/assets/images-nft/` como fallback do 
 
 Os testes específicos estão em `tests/design-system.spec.ts`, incluídos em `npm test` e `npm run test:e2e`. Verificam teclado, foco, contraste, estados desabilitados, descrições/erros, ausência de overflow e reduced motion em 390/768/1440px. Capturas de inspeção ficam em `test-results/`; não há baselines das páginas finais.
 
-A próxima fase implementará Home/Catálogo e sua integração HTTP. Autenticação visual, detalhes, carrinho, checkout, perfil/carteiras, realtime, Lighthouse e regressão visual final permanecem nas fases correspondentes.
+A Fase 4, descrita abaixo, implementou Home/Catálogo e sua integração HTTP. Autenticação visual, detalhes, carrinho, checkout, perfil/carteiras, realtime, Lighthouse e regressão visual final permanecem nas fases correspondentes.
 
 ### Verificação final da Fase 3
 
 `npm run check` passou (TypeScript, ESLint sem warnings e build). `npm test`: **60 testes aprovados**, incluindo os 42 anteriores e 18 verificações do Design System nos três viewports. As capturas foram inspecionadas; não houve overflow horizontal. O showcase foi confirmado ausente do JavaScript de produção. O bundle principal ficou em aproximadamente 585 kB (185 kB gzip); o aviso de 500 kB permanece registrado para a fase de performance, sem aumento do limite de warning. Nenhuma feature da Fase 4 foi iniciada.
+
+## Home / Catálogo — Fase 4
+
+Acesse `/` com `npm run dev:mock`. Hero, catálogo, destaque lateral, painéis de descoberta, Diário da Cunhagem e rodapé compõem a Home. No mobile/tablet, os filtros abrem em um Sheet e a grade tem duas colunas; no desktop, sidebar e três colunas.
+
+Exemplo compartilhável:
+
+```text
+/?q=ape&collection=golden&priceMin=0.5&priceMax=3&sort=price-asc&page=1
+```
+
+Busca é aplicada por Enter/botão; filtros por **Aplicar filtros**. Toda alteração de busca, coleção, faixa ou ordenação reinicia a página. Voltar/avançar e refresh restauram os controles. A paginação usa os oito itens por página retornados pela API. A rota `/nfts/$nftId` oferece somente um placeholder com retorno ao catálogo e preservação dos filtros.
+
+A interface distingue skeleton inicial, vazio, erro com retry, página fora do intervalo e refetch em background. **Atualizar** renova a consulta mantendo os cards; falhas de atualização preservam os resultados anteriores. Os cenários MSW e os controles documentados acima continuam disponíveis.
+
+Os cinco screenshots da Home guiaram a composição; o Figma continuou inacessível. As imagens em `public/artwork/` são SVGs originais de demonstração, com procedência em [public/artwork/README.md](public/artwork/README.md). Não são recortes nem exports oficiais. A API fornece suas URLs; a UI não importa fixtures. Coleções vêm da metadata REST, e não de uma lista local. Não há filtro de rede ou “Em alta”, pois o contrato não os suporta.
+
+A Home e o placeholder usam lazy loading de rota. Os testes em `tests/catalog.spec.ts` integram a suíte existente, incluindo HTTP, busca/filtros/preços, sort, paginação, histórico/refresh, erros/retry, latência, refetch e Sheet. As expectativas antigas do título da Home foram atualizadas para o título definitivo, preservando o propósito dos testes anteriores.
+
+### Verificação final da Fase 4
+
+`npm run check` aprovado: TypeScript, ESLint sem warnings e build. `npm test`: **101 testes aprovados** na execução completa — 60 anteriores, 39 verificações de catálogo (13 cenários × 3 viewports) e 2 de backend para metadata/migração de assets. Home, Hero e grade foram inspecionados em 390/768/1440px; não houve overflow horizontal nos testes. Os quatro casos afetados inicialmente pela inicialização do servidor passaram na execução final após warmup, sem ampliar timeouts.
+
+O build mantém Home (~94 kB / 32 kB gzip) e placeholder de detalhe em chunks separados; o showcase permanece fora do JavaScript de produção. O bundle principal (~593 kB / 188 kB gzip) continua emitindo o aviso já registrado de 500 kB, reservado para a etapa de performance. Relatório: `playwright-report/index.html`; capturas: `test-results/`. Nenhum commit automático e nenhuma implementação de NFT Detail completo.

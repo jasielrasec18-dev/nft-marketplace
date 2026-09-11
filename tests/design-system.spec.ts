@@ -118,7 +118,7 @@ test('quantity limits and favorite controls remain independent from card navigat
   const cardLink = page.getByRole('link').filter({ has: page.getByRole('heading', { name: 'Obra de exemplo #042' }) })
   await cardLink.focus()
   await page.keyboard.press('Enter')
-  await expect(page.getByRole('heading', { name: 'Uma nova coleção começa aqui.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Seja dono do futuro da arte digital' })).toBeVisible()
 })
 
 test('skeletons preserve square media, expose loading and honor reduced motion', async ({ page }) => {

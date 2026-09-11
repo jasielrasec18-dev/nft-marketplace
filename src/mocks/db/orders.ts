@@ -7,7 +7,6 @@ import { fail } from '../utils/responses'
 import { getScenario } from '../scenarios/config'
 
 function fingerprint(input: CreateOrderInput): string {
-  // Canonical explicit field order; equivalent JSON key ordering has the same identity.
   return JSON.stringify([input.quoteId, input.quoteVersion, input.walletId, input.collector.name, input.collector.email])
 }
 export function createOrder(db: MockDatabase, userId: string, input: CreateOrderInput, key: string): { order: Order; created: boolean } {
@@ -47,7 +46,7 @@ export function createOrder(db: MockDatabase, userId: string, input: CreateOrder
     }),
     createdAt: timestamp, updatedAt: timestamp, transactionReference: null, declineReason: null,
   }
-  // Reserve available stock atomically. Declines release it; confirmations consume it.
+ 
   for (const line of order.snapshot.lines) {
     const edition = findNft(db, line.nftId).editions.find((item) => item.id === line.editionId)
       ?? fail(422, 'INVALID_EDITION', 'Edição inválida.')

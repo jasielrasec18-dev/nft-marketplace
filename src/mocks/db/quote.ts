@@ -29,7 +29,7 @@ export function calculateQuote(db: MockDatabase, cart: StoredCart, input: QuoteI
     if (override) fail(422, override, override === 'INVALID_COUPON' ? 'Cupom inválido.' : 'Cupom expirado.')
     const coupon = db.coupons.find((item) => item.code === couponCode) ?? fail(422, 'INVALID_COUPON', 'Cupom inválido.')
     if (Date.parse(coupon.expiresAt) <= now(db)) fail(422, 'EXPIRED_COUPON', 'Cupom expirado.')
-    // Round discount down to one wei; never introduce fractional wei or over-discount.
+      
     discountEth = eth(new Decimal(subtotalEth).times(coupon.discountRate).toFixed(18, Decimal.roundDown))
   }
   const networkFeeEth = eth(input.network === 'ethereum' ? '0.005' : '0.001')

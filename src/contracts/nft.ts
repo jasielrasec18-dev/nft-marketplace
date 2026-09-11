@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { ethAmountSchema } from './common'
-import type { EthAmount, ResourceId } from './common'
+import type { EthAmount, ResourceId, Paginated } from './common'
 
 export interface NFTEdition {
   id: ResourceId
@@ -31,3 +31,8 @@ export const catalogSearchSchema = z.object({
   page: z.coerce.number().int().min(1).max(100000).catch(1),
 })
 export type CatalogSearch = z.infer<typeof catalogSearchSchema>
+
+export interface CatalogCollection { id: string; count: number }
+export interface NFTListResponse extends Paginated<NFT> {
+  collections: CatalogCollection[]
+}

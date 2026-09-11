@@ -19,7 +19,7 @@ export function orderHandlers(ctx: HandlerContext) {
   return [
     http.post(ctx.url('/orders'), async (info) => {
       const response = await create(info)
-      // Delay outside the transaction: retries can access the already committed order.
+    
       if (response instanceof Response && response.headers.get('X-Mock-Delay-After-Commit')) {
         response.headers.delete('X-Mock-Delay-After-Commit')
         await delay(ctx.timeoutDelayMs)

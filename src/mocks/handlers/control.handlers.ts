@@ -22,7 +22,7 @@ export function controlHandlers(ctx: HandlerContext) {
     }),
     http.get(ctx.url('/__mock/state'), () => {
       const db = ctx.store.read()
-      // Only diagnostics: never expose credential hashes, sessions or private payloads.
+    
       return HttpResponse.json({
         scenario: db.scenario, now: isoNow(db), latencyMs: db.latencyMs,
         counts: { users: db.users.length, nfts: db.nfts.length, orders: db.orders.length, quotes: db.quotes.length },

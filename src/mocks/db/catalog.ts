@@ -20,7 +20,7 @@ export function updateNftAvailability(db: MockDatabase, id: string, quantity: nu
     const edition = nft.editions.find((item) => item.id === editionId) ?? fail(404, 'EDITION_NOT_FOUND', 'Edição não encontrada.')
     edition.availableQuantity = quantity
   } else {
-    // Without an edition only a complete sell-out is unambiguous.
+   
     if (quantity !== 0) fail(422, 'EDITION_REQUIRED', 'Informe a edição para definir estoque.')
     for (const edition of nft.editions) edition.availableQuantity = 0
   }

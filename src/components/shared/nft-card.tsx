@@ -13,7 +13,6 @@ type NFTCardProps = {
   favorite?: boolean
   favoriteDisabled?: boolean
   onFavoriteChange?: (favorite: boolean) => void
-  /** Supply a router Link around these contents; favorite remains a sibling. */
   renderLink: (contents: ReactNode) => ReactNode
 }
 export function NFTCard({ name, collection, image, price, soldOut, favorite = false, favoriteDisabled, onFavoriteChange, renderLink }: NFTCardProps) {

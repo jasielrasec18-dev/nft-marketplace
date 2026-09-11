@@ -10,7 +10,7 @@ Prefixo padrão /api. Payloads JSON; ETH sempre string decimal. Requests da apli
 | POST | /auth/login | LoginInput → Session; Set-Cookie |
 | POST | /auth/logout | 204; revoga sessão e limpa cookie |
 | GET | /auth/session | Session ou null; 401 se inválida/expirada |
-| GET | /nfts | q, collection, priceMin, priceMax, sort, page → Paginated<NFT> |
+| GET | /nfts | q, collection, priceMin, priceMax, sort, page → NFTListResponse (items, page, pageSize, total, collections) |
 | GET | /nfts/:id | NFT ou 404 |
 | GET | /favorites | Favorites do usuário |
 | POST | /favorites/:nftId | inclusão idempotente → Favorites |

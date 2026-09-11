@@ -1,7 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import { catalogSearchSchema } from '@/contracts/nft'
-import type { NFT } from '@/contracts/nft'
-import type { Paginated } from '@/contracts/common'
+import type { NFTListResponse } from '@/contracts/nft'
 import { compareEth } from '@/lib/money'
 import { findNft } from '../db/catalog'
 import { getScenario } from '../scenarios/config'
@@ -28,9 +27,12 @@ export function nftHandlers(ctx: HandlerContext) {
         return right.createdAt.localeCompare(left.createdAt) || tie
       })
       const pageSize = 8
-      return HttpResponse.json<Paginated<NFT>>({
+      const collectionCounts = new Map<string, number>()
+      for (const nft of db.nfts) collectionCounts.set(nft.collection, (collectionCounts.get(nft.collection) ?? 0) + 1)
+      return HttpResponse.json<NFTListResponse>({
         items: items.slice((search.page - 1) * pageSize, search.page * pageSize),
         page: search.page, pageSize, total: items.length,
+        collections: [...collectionCounts].sort(([a], [b]) => a.localeCompare(b, 'en')).map(([id, count]) => ({ id, count: getScenario(db.scenario).emptyCatalog ? 0 : count })),
       })
     })),
     http.get(ctx.url('/nfts/:id'), ctx.wrap('nfts.detail', (db, _request, params) =>

@@ -13,9 +13,6 @@ type FormFieldProps = {
   children: (props: ControlProps) => ReactNode
 }
 
-/** Pass the supplied accessibility props to Input, SelectTrigger or another control.
- * RHF register/ref and validation remain owned by the future feature.
- */
 export function FormField({ id, label, description, error, required, className, children }: FormFieldProps) {
   const generatedId = useId()
   const controlId = id ?? generatedId

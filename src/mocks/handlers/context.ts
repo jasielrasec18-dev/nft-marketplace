@@ -22,7 +22,6 @@ export function createHandlerContext(store: MockDatabaseStore, baseUrl: string, 
   return {
     store, timeoutDelayMs, url: (path) => `${baseUrl.replace(/\/$/, '')}${path}`,
     wrap: (operation, resolver) => async ({ request, params, cookies }) => {
-      // MSW resolves explicit request cookies before its internal cookie store.
       bindRequestCookies(request, cookies)
       const generation = store.generation
       try {
@@ -40,7 +39,7 @@ export function createHandlerContext(store: MockDatabaseStore, baseUrl: string, 
         if (typeof timing.scenario.failure === 'number') {
           fail(timing.scenario.failure, 'SERVICE_UNAVAILABLE', 'Serviço temporariamente indisponível na simulação.')
         }
-        // Scenario mutations persist even when the following quote/order is rejected.
+        
         await store.transaction((db) => {
           if (generation !== store.generation) fail(409, 'MOCK_RESET', 'A simulação foi reiniciada.')
           settleDueOrders(db)

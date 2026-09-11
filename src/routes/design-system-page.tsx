@@ -24,7 +24,6 @@ import { CartSummarySkeleton } from '@/components/shared/cart-summary-skeleton'
 import { QuantitySelector } from '@/components/shared/quantity-selector'
 import { ETHPrice } from '@/components/shared/eth-price'
 
-// Development-only examples. No fixtures, requests, persistence or business flows.
 export function DesignSystemPage() {
   const [quantity, setQuantity] = useState(1)
   const [favorite, setFavorite] = useState(false)

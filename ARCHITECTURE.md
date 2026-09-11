@@ -2,7 +2,7 @@
 
 ## Escopo atual
 
-Fases 0 e 1 preservadas; fase 2 adiciona backend simulado, persistência e cenários; fase 3 adiciona o Design System. Nenhuma tela de negócio foi criada.
+Fases 0 e 1 preservadas; fase 2 adiciona backend simulado, persistência e cenários; fase 3 adiciona o Design System. A Fase 4 acrescenta Home/Catálogo com leitura HTTP; o detalhe permanece placeholder.
 
 ```text
 UI → hooks/features → TanStack Query → Axios → REST → MSW → MockDatabase
@@ -155,3 +155,45 @@ Playwright foi estendido nos projetos existentes de 390/768/1440px. Os testes ve
 ### Verificação final da Fase 3
 
 `npm run check` passou (TypeScript, ESLint sem warnings e build). `npm test`: **60 testes aprovados**, incluindo os 42 anteriores e 18 verificações do Design System nos três viewports. As capturas foram inspecionadas; não houve overflow horizontal. O showcase foi confirmado ausente do JavaScript de produção. O bundle principal ficou em aproximadamente 585 kB (185 kB gzip); o aviso de 500 kB permanece registrado para a fase de performance, sem aumento do limite de warning. Nenhuma feature da Fase 4 foi iniciada.
+
+## HOME / CATÁLOGO — Fase 4
+
+### Fonte de verdade e consultas
+
+O schema `catalogSearchSchema` existente continua sendo a entrada do Router. `q`, `collection`, `priceMin`, `priceMax`, `sort` e `page` controlam interface, requisição e `nftKeys.list(search)`. Parâmetros inválidos usam os defaults do contrato; a URL pode manter a escrita original até a próxima interação, enquanto UI/API usam o valor validado.
+
+A Home compõe seções e passa alterações tipadas ao Router. Busca tem um draft local e envio explícito; cada busca aplicada cria uma entrada no histórico. Filtros desktop/mobile usam o mesmo FilterForm; o draft do Sheet é descartado ao fechar sem aplicar. A chave do formulário acompanha a busca validada para sincronizar back/forward/refresh. Nenhum filtro é persistido em localStorage.
+
+A faixa usa strings decimais validadas e compareEth; o formulário rejeita negativos, formatos inválidos e mínimo maior que máximo. Uma URL com intervalo invertido continua sendo rejeitada com 422 pela API e oferece correção/limpeza na UI. Nenhuma conversão financeira para float foi introduzida.
+
+`features/catalog/api/get-nfts.ts` recebe o Axios da infraestrutura por injeção; `useNfts` acessa ServicesContext e chama useQuery com todos os parâmetros e AbortSignal → Axios signal. A política global de staleTime, gcTime e retry permanece intacta. Consultas antigas deixam de dirigir a tela ao trocar a chave e são canceladas quando não têm observadores.
+
+O catálogo não filtra nem pagina localmente. A resposta mantém pageSize=8, page e total; totalPages é apenas a divisão dessa metadata para os controles. Página fora do intervalo exibe estado específico com retorno à primeira. Paginação reposiciona/foca o catálogo sem animação; mudanças de filtro preservam a rolagem. Navegação para detalhe usa Link e leva a busca tipada para um retorno compartilhável; o histórico do navegador também restaura o estado anterior.
+
+### Carregamento e descoberta
+
+A consulta padrão alimenta Hero, destaque e imagens dos blocos editoriais. No acesso padrão ela compartilha chave/cache com o catálogo e é deduplicada pelo Query. Quando o catálogo está filtrado, a descoberta mantém uma consulta independente para não trocar o Hero a cada busca. Falha ou loading dessa consulta nunca bloqueia a composição textual da Home.
+
+Primeiro carregamento de uma chave sem cache usa NFTGridSkeleton. Refetch da mesma chave conserva a grade, anuncia “Atualizando…” e desabilita somente o controle de atualização. Falha em background mostra aviso com retry e conserva os dados disponíveis. Mudanças de filtro sem cache mostram skeleton, evitando apresentar resultados da combinação anterior como se fossem atuais.
+
+As seções editoriais têm conteúdo estático e imagens recebidas por props da resposta HTTP. Não há leitura direta de fixtures, mutations de favorito, auth, carrinho, checkout ou realtime. Links de futuro acesso a conta/carrinho/newsletter estão desabilitados e identificados como “em breve”; âncoras de catálogo/Diário são funcionais.
+
+### Extensões mínimas do mock e assets
+
+O catálogo não tinha fonte de coleções para a sidebar. NFTListResponse estende Paginated<NFT> com `collections: { id, count }[]`, derivada da base inteira, independente da busca/página, para que filtros não desapareçam ao combinar critérios. O cenário vazio retorna contagens zero. Endpoint, paginação e filtros existentes foram preservados; nenhum endpoint de negócio foi refeito.
+
+As fixtures passam a fornecer quatro SVGs locais de demonstração. A carga de bases anteriores substitui somente URLs reconhecidas do antigo hero.png no catálogo/gallery, sem reset, alteração de preços, contas, sessões ou snapshots de pedidos/cotações. Os testes cobrem preservação dos dados e metadata global. A UI desconhece essa migração.
+
+Figma foi tentado novamente, sem acesso. desktop-inicio-1/2/3/4 e mobile-inicio-nft-1 foram abertos e analisados em conjunto: Hero, sidebar, grade, destaque, painéis, editorial e footer. SVGs são originais e provisórios; não reproduzem a arte oficial. A fidelidade final das imagens depende dos assets oficiais, sem impedir validação estrutural/funcional.
+
+### Validação
+
+A suíte existente foi ampliada nos três projetos Chromium (390, 768 e 1440px), sem novas bibliotecas. Casos cobrem parâmetros HTTP combinados, precisão de preços, sort efetivo, paginação, URL inválida, histórico, refresh, retorno do detalhe, cenários default/empty/slow-network/variable-latency/network-error/server-error, refetch com sucesso/falha e teclado/draft/foco no Sheet. Capturas para inspeção não constituem baselines finais.
+
+O servidor Vite pré-transforma Home e showcase via server.warmup.clientFiles para reduzir o carregamento em cascata de imports lazy na primeira navegação de desenvolvimento. Isso não altera o bundle de produção, políticas de cache HTTP ou timeouts do Playwright.
+
+### Verificação final da Fase 4
+
+`npm run check` aprovado: TypeScript, ESLint sem warnings e build. `npm test`: **101 testes aprovados** na execução completa — 60 anteriores, 39 verificações de catálogo (13 cenários × 3 viewports) e 2 de backend para metadata/migração de assets. Home, Hero e grade foram inspecionados em 390/768/1440px; não houve overflow horizontal nos testes. Os quatro casos afetados inicialmente pela inicialização do servidor passaram na execução final após warmup, sem ampliar timeouts.
+
+O build mantém Home (~94 kB / 32 kB gzip) e placeholder de detalhe em chunks separados; o showcase permanece fora do JavaScript de produção. O bundle principal (~593 kB / 188 kB gzip) continua emitindo o aviso já registrado de 500 kB, reservado para a etapa de performance. Relatório: `playwright-report/index.html`; capturas: `test-results/`. Nenhum commit automático e nenhuma implementação de NFT Detail completo.

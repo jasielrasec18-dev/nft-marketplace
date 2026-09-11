@@ -23,7 +23,6 @@ export async function createMockDatabase(storage: MockStorage, initial: ResetMoc
       return enqueue(async () => {
         const draft = structuredClone(state)
         const result = await operation(draft)
-        // Persist before publishing, so failed writes never report success.
         persistence.save(draft)
         state = draft
         return result

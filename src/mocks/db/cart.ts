@@ -42,7 +42,7 @@ export function mergeGuestCart(db: MockDatabase, request: Request, userId: strin
   }
   for (const item of guest.items) {
     const existing = target.items.find((other) => other.nftId === item.nftId && other.editionId === item.editionId)
-    // Preserve intent, including quantities that became unavailable; quote must reject them.
+    
     if (existing) existing.quantity += item.quantity
     else target.items.push({ ...item, id: nextId(db, 'item') })
   }

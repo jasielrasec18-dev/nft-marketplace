@@ -1,6 +1,6 @@
 import type { NFT } from '@/contracts/nft'
 import { eth } from '@/lib/money'
-const artwork = new URL('../../assets/hero.png', import.meta.url).href
+import { demoArtwork } from './artwork'
 
 const collections = ['golden', 'jungle', 'cosmic', 'pixel'] as const
 const names = ['Golden Ape', 'Jungle Panther', 'Cosmic Owl', 'Pixel Fox'] as const
@@ -14,7 +14,7 @@ export function createNfts(): NFT[] {
       name: `${names[index % names.length]} #${String(index + 1).padStart(3, '0')}`,
       description: 'Colecionável fictício para demonstração e testes do marketplace.',
       collection: collections[index % collections.length] ?? 'golden',
-      imageUrl: artwork, gallery: [artwork],
+      imageUrl: demoArtwork(collections[index % collections.length] ?? 'golden'), gallery: [demoArtwork(collections[index % collections.length] ?? 'golden')],
       priceEth: eth(prices[index % prices.length] ?? '1.19'),
       editions: [
         { id: 'standard', name: 'Standard', availableQuantity: stock },

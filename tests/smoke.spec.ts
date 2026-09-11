@@ -4,7 +4,7 @@ test('boots with MSW, keeps URL through refresh and has no horizontal overflow',
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/?q=ape&collection=golden&priceMin=0.5&sort=price-asc&page=2')
-  await expect(page.getByRole('heading', { name: 'Uma nova coleção começa aqui.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Seja dono do futuro da arte digital' })).toBeVisible()
   await page.evaluate(() => navigator.serviceWorker.ready)
   expect(await page.evaluate(() => navigator.serviceWorker.controller?.scriptURL)).toContain('/mockServiceWorker.js')
   await page.reload()
@@ -19,7 +19,7 @@ test('unknown route renders 404 and a working return link', async ({ page }) => 
   await page.goto('/pagina-inexistente')
   await expect(page.getByRole('heading', { name: 'Página não encontrada' })).toBeVisible()
   await page.getByRole('link', { name: 'Voltar ao início' }).click()
-  await expect(page.getByRole('heading', { name: 'Uma nova coleção começa aqui.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Seja dono do futuro da arte digital' })).toBeVisible()
 })
 
 test('keyboard skip link moves focus to the main content', async ({ page }) => {
