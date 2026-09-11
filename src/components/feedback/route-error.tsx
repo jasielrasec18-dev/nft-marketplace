@@ -1,12 +1,6 @@
 import type { ErrorComponentProps } from '@tanstack/react-router'
-import { Button } from '@/components/ui/button'
+import { ErrorState } from '@/components/feedback/error-state'
 
 export function RouteError({ reset }: ErrorComponentProps) {
-  return (
-    <section role="alert" className="space-y-5">
-      <h1 className="text-3xl font-semibold">Não foi possível abrir esta página</h1>
-      <p className="text-muted-foreground">Tente novamente para continuar.</p>
-      <Button onClick={reset}>Tentar novamente</Button>
-    </section>
-  )
+  return <ErrorState headingLevel={1} title="Não foi possível abrir esta página" description="Tente novamente para continuar." onRetry={reset} />
 }

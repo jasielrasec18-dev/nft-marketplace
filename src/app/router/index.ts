@@ -1,4 +1,4 @@
-import { createRootRouteWithContext, createRoute, createRouter, type SearchSchemaInput } from '@tanstack/react-router'
+import { createRootRouteWithContext, createRoute, createRouter, lazyRouteComponent, type SearchSchemaInput } from '@tanstack/react-router'
 import type { AppServices } from '@/app/services'
 import { catalogSearchSchema } from '@/contracts/nft'
 import { AppLayout } from '@/components/layout/app-layout'
@@ -17,7 +17,12 @@ const homeRoute = createRoute({
   validateSearch: (search: Record<string, unknown> & SearchSchemaInput) => catalogSearchSchema.parse(search),
   component: HomePage,
 })
-const routeTree = rootRoute.addChildren([homeRoute])
+const developmentRoutes = import.meta.env.DEV ? [createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/design-system',
+  component: lazyRouteComponent(() => import('@/routes/design-system-page'), 'DesignSystemPage'),
+})] : []
+const routeTree = rootRoute.addChildren([homeRoute, ...developmentRoutes])
 
 export function createAppRouter(services: AppServices) {
   return createRouter({

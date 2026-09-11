@@ -1,8 +1,8 @@
-# Arquitetura — fundação e Mock Backend
+# Arquitetura — fundação, Mock Backend e Design System
 
 ## Escopo atual
 
-Fases 0 e 1 preservadas; fase 2 adiciona backend simulado, persistência e cenários. Nenhuma tela de negócio foi criada.
+Fases 0 e 1 preservadas; fase 2 adiciona backend simulado, persistência e cenários; fase 3 adiciona o Design System. Nenhuma tela de negócio foi criada.
 
 ```text
 UI → hooks/features → TanStack Query → Axios → REST → MSW → MockDatabase
@@ -94,10 +94,64 @@ Cobertura inclui login/cadastro, isolamento, filtros/paginação, carrinho, cupo
 
 Endpoints /__mock são ferramentas da simulação, não APIs administrativas de produção. Só existem com MSW habilitado e não conectam a dados externos.
 
-Design System completo, telas, eventos Socket.IO, regressão visual e Lighthouse ficam para suas fases. A integração de avatar nesta etapa valida formato/tamanho do data URL; a seleção/decodificação de arquivos será feita na feature. Os assets são provisórios. O warning de bundle principal acima de 500 kB permanece registrado para a etapa de performance.
+O Design System foi implementado na Fase 3, descrita abaixo. Telas, eventos Socket.IO, regressão visual final e Lighthouse ficam para suas fases. A integração de avatar nesta etapa valida formato/tamanho do data URL; a seleção/decodificação de arquivos será feita na feature. Os assets são provisórios. O warning de bundle principal acima de 500 kB permanece registrado para a etapa de performance.
 
 ## Resultado de verificação
 
 Fase 2: 42 testes aprovados na suíte completa e 4 testes de reset aprovados na verificação final específica. Typecheck, lint sem warnings, build padrão e build:mock passaram. O teste de navegador comprova Axios/MSW, cookies, localStorage, refresh com pedido pending e confirmação com relógio controlado em 390, 768 e 1440 px. A execução do Chromium exigiu permissão fora do ambiente restrito.
 
 Bundle principal do build mock: aproximadamente 542 kB (171 kB gzip). Mocks: chunk sob demanda de aproximadamente 456 kB (170 kB gzip). O warning de 500 kB foi preservado; Lighthouse não foi executado nesta fase.
+
+## DESIGN SYSTEM
+
+A Fase 3 adiciona apresentação reutilizável, sem chamadas HTTP, estado de sessão, mutations ou imports de mocks. A Home continua temporária; catálogo e fluxos de negócio pertencem às próximas fases.
+
+### Referências e aproximações
+
+O Figma foi consultado, mas ficou inacessível pelo acesso disponível. Os **23 screenshots locais (17 desktop e 6 mobile)** em `src/assets/images-nft/` foram abertos e analisados. Nenhum foi importado ou recortado para compor a UI.
+
+| Tela | Desktop (arquivos .png) | Mobile (arquivo .png) |
+| --- | --- | --- |
+| Início | desktop-inicio-1, desktop-inicio-2, desktop-inicio-3, desktop-inicio-4 | mobile-inicio-nft-1 |
+| Detalhes | desktop-detalhes-nft-1, desktop-detalhes-nft-2 | mobile-detalhesdanft-nft-1 |
+| Login | desktop-login-nft-1, desktop-login-nft-2 | mobile-login-nft-1 |
+| Cadastro | desktop-cadastro-nft-1, desktop-cadastro-nft-2 | mobile-cadastro-nft-1 |
+| Carrinho | desktop-carrinho-nft-1, desktop-carrinho-nft-2 | mobile-carrinho-nft-1 |
+| Pagamento | desktop-pagamento-nft-1, desktop-pagamento-nft-2 | mobile-pagamentos-nft-1 |
+| Carteiras | desktop-carteiras-nft-1 | Sem referência mobile |
+| Confirmação | desktop-confirmarpedido-nft-1 | Sem referência mobile |
+| Perfil | desktop-perfildocolecionador-nft-1 | Sem referência mobile |
+
+Padrões extraídos: fundo marrom quase preto, painéis marrons, texto creme, âmbar em ações/preços, bordas finas, tipografia monoespaçada, mídia quadrada, raios maiores no mobile, controles empilhados e navegação compacta. Cabeçalho e rodapé reaproveitam a identidade KURIO, sem links para features inexistentes, newsletter fictícia ou promessas de segurança/transação.
+
+Não há arquivos de fonte nem imagens individuais de NFTs/logo entre os assets fornecidos. A marca é texto; os ícones são Lucide; a ausência de imagem tem representação explícita. Os assets do template continuam preservados para o backend anterior, mas não aparecem na nova UI. Fontes, medidas e cores foram aproximadas a partir dos screenshots, não extraídas do Figma.
+
+### Tokens e tipografia
+
+`src/styles/globals.css` mantém Tailwind v4, `@import`, `@theme inline` e CSS variables. `components.json` mantém shadcn new-york, aliases, Lucide e CSS variables. Não há configuração Tailwind v3, theme switcher ou nova biblioteca visual.
+
+Tokens principais: background #160e0a, card/popover #281911, primary #d58c48, foreground #f5eee5, muted-foreground #bfa984. Input #95734f e ring #f4b86f são mais claros que as linhas decorativas para garantir contraste. Success/warning/destructive têm texto e ícone associados; nenhum estado depende apenas de cor. Raios partem de 6px, com mídia mobile de 16px; espaçamento usa a escala Tailwind de 4px. Camadas: overlay 40, modal 50, popover 60 e skip link 70, declaradas uma vez.
+
+Fonte: `ui-monospace, Cascadia Code, SFMono-Regular, Consolas, Liberation Mono, monospace`, sem download. É uma aproximação substituível pelo token `--font-marketplace`. Classes de display (32–56px), page (26–40px), section (18–22px), card (14px), body (15px), small (14px), label (13px), caption/metadata (12px) e price (14px) preservam hierarquia. Não existem wrappers abstratos H1/Text.
+
+### Camadas e composição
+
+- `ui/`: Button com CVA/Slot; Input, Label, FormField; Select, Checkbox, RadioGroup, Dialog, Sheet, Tabs e Separator baseados em Radix; Badge e Skeleton. Instalados somente os sete pacotes Radix usados. DropdownMenu/Tooltip/toast aguardam um uso concreto.
+- `layout/`: PageContainer concentra largura máxima de 76rem e gutters de 16/24/32px. AppLayout preserva skip link, main focável, Outlet e footer. Header possui navegação desktop e Sheet mobile; Footer utiliza as colunas editoriais da referência.
+- `shared/`: NFTCard presentational, ETHPrice e QuantitySelector controlado. O link do card é composto por `renderLink` para aceitar o Router, com favorito como irmão, nunca filho do link. Preço recebe string e usa `lib/money.ts`, preservando até 18 casas sem conversão para Number. Imagem recebe src/alt/srcSet/sizes, dimensões, proporção quadrada, object-fit, lazy loading e decoding async.
+- `feedback/`: EmptyState, ErrorState e InlineAlert contextuais. RouteError preserva reset; 404 preserva retorno à Home.
+- Skeleton, NFTCardSkeleton, NFTGridSkeleton, NFTDetailSkeleton e CartSummarySkeleton reservam espaço antes dos dados. Shimmer usa somente transform/opacidade visual; reduced motion desativa a animação mantendo o anúncio de carregamento.
+
+FormField gera IDs estáveis via useId e entrega id/aria-describedby/aria-invalid ao controle por render prop. A feature futura passa register/ref do RHF e required ao Input/Select; validação permanece fora do Design System. Erros e descrições são visíveis e associados. Botões pendentes usam disabled + aria-busy + texto; não há estratégia de toast ou formulário de negócio antecipado.
+
+### Acessibilidade e validação
+
+Controles mantêm alvos de 44px e focus-visible. Radix gerencia focus trap, Escape e retorno do foco de Dialog/Sheet, além do teclado de Select/Checkbox/Radio/Tabs. Os alvos e as bordas dos campos foram ampliados em relação aos screenshots por acessibilidade.
+
+`/design-system` é uma rota lazy criada somente com `import.meta.env.DEV`; a demonstração não entra no JavaScript de produção. Contém estado local de exemplos claramente identificados, sem chamadas, dados do backend ou persistência. Pode ser removida junto à entrada condicional do Router e aos testes específicos.
+
+Playwright foi estendido nos projetos existentes de 390/768/1440px. Os testes verificam controles, labels/erros, limites, independência favorito/link, Tab/Shift+Tab/Enter/Space/Escape, seleção, foco confinado/restaurado, ausência de overflow, contraste de tokens e reduced motion. Screenshots para inspeção ficam em test-results; não são baselines de regressão final. A comparação visual dos primitives foi feita com as referências locais; a fidelidade das páginas completas será validada nas respectivas fases.
+
+### Verificação final da Fase 3
+
+`npm run check` passou (TypeScript, ESLint sem warnings e build). `npm test`: **60 testes aprovados**, incluindo os 42 anteriores e 18 verificações do Design System nos três viewports. As capturas foram inspecionadas; não houve overflow horizontal. O showcase foi confirmado ausente do JavaScript de produção. O bundle principal ficou em aproximadamente 585 kB (185 kB gzip); o aviso de 500 kB permanece registrado para a fase de performance, sem aumento do limite de warning. Nenhuma feature da Fase 4 foi iniciada.

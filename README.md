@@ -1,6 +1,6 @@
 # NFT Marketplace — Jungle Gaming
 
-Implementação do [Frontend Challenge da Jungle Gaming](https://github.com/junglegaming/frontend-challenge), com React e TypeScript. **Estado atual: fases 0, 1 e 2 — fundação e backend simulado.** A interface continua com Home mínima e 404; as telas de negócio serão implementadas nas próximas fases.
+Implementação do [Frontend Challenge da Jungle Gaming](https://github.com/junglegaming/frontend-challenge), com React e TypeScript. **Estado atual: fases 0 a 3 — fundação, backend simulado e Design System.** A interface continua com Home mínima e 404; as telas de negócio serão implementadas nas próximas fases.
 
 O enunciado oficial define os comportamentos; o [Figma](https://www.figma.com/design/Ff0SksUi7UFtPWUO8kyNtw/Frontend-Challenge?node-id=0-1&p=f) define a referência visual.
 
@@ -133,12 +133,28 @@ Decisões detalhadas: [ARCHITECTURE.md](ARCHITECTURE.md). README original do tem
 
 A fase 2 não implementa as telas, integração do cache com mutations, eventos Socket.IO, regressão visual ou Lighthouse. Os pagamentos evoluem pelo relógio simulado e são reconciliados na próxima chamada REST ou pelo controle de relógio. Não há emissão de eventos falsos para a interface.
 
-A simulação é local a uma instância da aplicação; não é um servidor compartilhado entre navegadores/abas. Os tokens e dados locais não constituem autenticação de produção. Os assets e tokens visuais permanecem provisórios. O aviso de bundle principal acima de 500 kB continua como pendência da fase de performance.
+A simulação é local a uma instância da aplicação; não é um servidor compartilhado entre navegadores/abas. Os tokens e dados locais não constituem autenticação de produção. Os assets individuais das obras ainda são provisórios no backend; os tokens da UI foram refinados na Fase 3. O aviso de bundle principal acima de 500 kB continua como pendência da fase de performance.
 
 Para testar o build: `npm run build:mock` e `npm run preview`. O deploy final precisará servir `dist/` por HTTPS e tratar URLs de páginas como SPA. Publicação e Lighthouse pertencem às fases posteriores.
 
-**Próxima etapa: FASE 3 — Design System.**
+**Próxima etapa: FASE 4 — Home / Catálogo.**
 
 ## Validação da fase 2
 
 TypeScript e ESLint passaram; builds padrão e com mocks concluídos. A suíte completa teve 42 testes aprovados: 23 de backend, 7 de fundação e 12 de navegador. Após o último reforço da proteção de reset, os 4 testes relacionados foram repetidos e passaram. O relatório HTML da suíte completa está em playwright-report/index.html (gerado localmente, não versionado).
+
+## Design System — Fase 3
+
+Execute `npm run dev:mock` e abra `http://localhost:5173/design-system` (ou a porta indicada pelo Vite). A demonstração é lazy e existe somente em desenvolvimento; `/` continua sendo a Home temporária. Os exemplos não fazem chamadas HTTP, autenticação, favoritos persistidos ou compras.
+
+A base inclui Button, Input, Label/FormField, Select, Checkbox, RadioGroup, Dialog, Sheet, Tabs, Separator, Badge, feedback contextual, NFTCard, ETHPrice e QuantitySelector. Há skeletons de card, grade, detalhe e resumo, com shimmer que respeita reduced motion. PageContainer, Header/Footer e AppLayout compartilham a identidade KURIO.
+
+Foram analisados os 23 screenshots em `src/assets/images-nft/` como fallback do Figma inacessível. Eles não são assets de renderização. Não foram encontradas fontes ou imagens individuais das obras: a fonte monoespaçada usa fallback local, a marca é tipográfica e os cards mostram ausência explícita de imagem. Os ícones são Lucide. Cores/medidas aproximadas e ajustes de acessibilidade estão documentados em [ARCHITECTURE.md](ARCHITECTURE.md#design-system).
+
+Os testes específicos estão em `tests/design-system.spec.ts`, incluídos em `npm test` e `npm run test:e2e`. Verificam teclado, foco, contraste, estados desabilitados, descrições/erros, ausência de overflow e reduced motion em 390/768/1440px. Capturas de inspeção ficam em `test-results/`; não há baselines das páginas finais.
+
+A próxima fase implementará Home/Catálogo e sua integração HTTP. Autenticação visual, detalhes, carrinho, checkout, perfil/carteiras, realtime, Lighthouse e regressão visual final permanecem nas fases correspondentes.
+
+### Verificação final da Fase 3
+
+`npm run check` passou (TypeScript, ESLint sem warnings e build). `npm test`: **60 testes aprovados**, incluindo os 42 anteriores e 18 verificações do Design System nos três viewports. As capturas foram inspecionadas; não houve overflow horizontal. O showcase foi confirmado ausente do JavaScript de produção. O bundle principal ficou em aproximadamente 585 kB (185 kB gzip); o aviso de 500 kB permanece registrado para a fase de performance, sem aumento do limite de warning. Nenhuma feature da Fase 4 foi iniciada.
