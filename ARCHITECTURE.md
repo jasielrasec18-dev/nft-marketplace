@@ -2,7 +2,7 @@
 
 ## Escopo atual
 
-Fases 0 e 1 preservadas; fase 2 adiciona backend simulado, persistência e cenários; fase 3 adiciona o Design System. A Fase 4 acrescenta Home/Catálogo com leitura HTTP; o detalhe permanece placeholder.
+Fases 0 e 1 preservadas; fase 2 adiciona backend simulado, persistência e cenários; fase 3 adiciona o Design System. A Fase 4 acrescenta Home/Catálogo com leitura HTTP; a Fase 5 substitui o placeholder por NFT Detail e inclusão básica no carrinho.
 
 ```text
 UI → hooks/features → TanStack Query → Axios → REST → MSW → MockDatabase
@@ -196,4 +196,42 @@ O servidor Vite pré-transforma Home e showcase via server.warmup.clientFiles pa
 
 `npm run check` aprovado: TypeScript, ESLint sem warnings e build. `npm test`: **101 testes aprovados** na execução completa — 60 anteriores, 39 verificações de catálogo (13 cenários × 3 viewports) e 2 de backend para metadata/migração de assets. Home, Hero e grade foram inspecionados em 390/768/1440px; não houve overflow horizontal nos testes. Os quatro casos afetados inicialmente pela inicialização do servidor passaram na execução final após warmup, sem ampliar timeouts.
 
-O build mantém Home (~94 kB / 32 kB gzip) e placeholder de detalhe em chunks separados; o showcase permanece fora do JavaScript de produção. O bundle principal (~593 kB / 188 kB gzip) continua emitindo o aviso já registrado de 500 kB, reservado para a etapa de performance. Relatório: `playwright-report/index.html`; capturas: `test-results/`. Nenhum commit automático e nenhuma implementação de NFT Detail completo.
+O build mantém Home (~94 kB / 32 kB gzip) e placeholder de detalhe em chunks separados; o showcase permanece fora do JavaScript de produção. O bundle principal (~593 kB / 188 kB gzip) continua emitindo o aviso já registrado de 500 kB, reservado para a etapa de performance. Relatório: `playwright-report/index.html`; capturas: `test-results/`. Nenhum commit automático e nenhuma implementação de NFT Detail completo naquela fase.
+
+## NFT Detail — Fase 5
+
+### Rota, consultas e cache
+
+`/nfts/$nftId` continua lazy, com params tipados e busca validada pelo schema existente. `NFTDetailPage` compõe a experiência; `useNft` usa `nftKeys.detail(id)` e `getNft(api, id, signal)`. O ID é codificado no path. O Axios vem de ServicesContext, com normalização de erros, cancelamento e política global de Query preservados.
+
+Não há initialData/placeholderData oriundo das listagens: a resposta específica do detalhe é a autoridade também no primeiro acesso. Consultas já realizadas compartilham o cache por ID, com staleTime de 30 segundos e refetch explícito/foco/reconexão conforme a foundation. Trocar ID cancela consultas sem observadores e separa respostas por chave.
+
+404 usa estado de recurso inexistente e retorno ao catálogo; falhas transitórias oferecem retry. Sem dados, usa NFTDetailSkeleton; com dados, mantém o conteúdo durante refetch e anuncia falha em background. Um 404 posterior tem precedência sobre conteúdo obsoleto.
+
+Relacionados reutilizam `useNfts` e `nftKeys.list` com todos os defaults e a coleção atual. A API filtra/ordena/pagina; a apresentação exclui o NFT atual e limita a cinco cards. Como exclusão e limite são apenas de apresentação, não entram na chave da requisição compartilhada. A consulta tem loading, erro/retry e vazio próprios, sem bloquear o detalhe. Links relacionados preservam o contexto do catálogo; “Ver coleção” inicia uma consulta limpa da coleção.
+
+### Estado de apresentação e aquisição
+
+Galeria deduplica URLs recebidas da API; seleção usa botões com aria-pressed. Uma única imagem não gera miniaturas artificiais. Imagem principal tem dimensões 480×480, proporção estável, prioridade alta e fallback explícito; relacionadas reutilizam NFTCard com lazy loading.
+
+Edição e quantidade são estado local de intenção, reiniciado ao mudar o NFT. A primeira edição disponível é selecionada inicialmente. Opções sem estoque ficam desabilitadas e textuais. Trocar edição reinicia quantidade em 1; o valor efetivo é limitado ao estoque atual em cada render, inclusive após refetch. Se a edição escolhida esgotar, a ação fica indisponível até uma escolha válida. O preço é único por NFT no contrato e não muda artificialmente por edição.
+
+`features/cart` contém somente API e hook reutilizáveis de inclusão. O POST recebe nftId/editionId/quantity, e o servidor resolve owner por cookie e valida estoque acumulado no carrinho. Não há carrinho em estado local nem reserva de estoque ao adicionar. Durante a mutation os controles ficam bloqueados; sucesso e falha usam InlineAlert. Não há retry automático de mutation, conforme a política existente. OUT_OF_STOCK invalida a query do NFT.
+
+A resposta invalida a chave de carrinho do owner retornado, sem popular cache privado com uma resposta tardia. Não foi criada consulta/página de carrinho nem UI de sessão. A fase de autenticação continuará responsável por proteger transições de identidade e efeitos pendentes. Favoritos permanecem explicitamente desabilitados; autenticação, optimistic update/rollback e reconciliação dessa feature ficam para as fases respectivas.
+
+### Limites e validação
+
+Sem alterações em contratos, fixtures, handlers ou banco nesta fase. Os cenários price-changed/sold-out mantêm seus gatilhos de cotação/pedido; testes e demonstração usam os controles REST existentes para preparar preço/estoque persistidos antes de consultar o detalhe. Não há sockets ou eventos locais.
+
+A composição usa as três referências de detalhes complementares; não exibe propriedades ausentes na API. Tablets usam a quebra existente em 768px; desktop mantém cinco cards relacionados e mobile dois. Skeleton, Tabs, RadioGroup, QuantitySelector, ETHPrice, feedback, layout e NFTCard são reutilizados. O warmup de desenvolvimento inclui a nova rota, preservando lazy loading em produção.
+
+`tests/nft-detail.spec.ts` acrescenta 13 cenários executados em 390/768/1440px: URL direta/refresh, API real, imagem/overflow, 404, skeleton, rede/500/retry, edições/min/max, sold-out, preço de um wei/refetch/falha em background, relacionados/contexto da URL, inclusão visitante/persistência, conflito de estoque, erro de mutation e teclado. O teste de ida/volta do catálogo foi atualizado para o título real, preservando o propósito original. Capturas são para inspeção, sem baselines definitivas.
+
+### Verificação final da Fase 5
+
+`npm run check` passou: TypeScript, ESLint sem warnings e build. `npm test`: **140 testes aprovados** na execução completa (7 minutos), incluindo os 101 anteriores e 39 verificações de detalhe (13 cenários × 3 viewports). Acesso direto/refresh, 404, estados MSW, edições, limites, precisão ETH, inclusão visitante, conflito/erro, relacionados, URL e teclado foram validados. Capturas de 390/768/1440px foram inspecionadas; os testes não detectaram overflow horizontal nem erros de console no fluxo nominal.
+
+O detalhe continua em chunk lazy próprio (~18,23 kB / 5,99 kB gzip), com componentes compartilhados extraídos pelo bundler. O bundle principal (~593 kB / 188 kB gzip) mantém o warning pré-existente de 500 kB; não foi aumentado o limite. Nenhuma dependência nova, alteração de backend, baseline visual final ou execução de Lighthouse.
+
+Relatório local: `playwright-report/index.html`. Capturas: `test-results/nft-detail-direct-detail-*/detail.png` e `detail-content.png`. Nenhum commit automático. Próxima etapa: **FASE 6 — Auth**, não iniciada.

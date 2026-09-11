@@ -88,7 +88,7 @@ test('search, collection and exact price filters combine in the HTTP request and
   expect(new URL(page.url()).searchParams.get('collection')).toBe('golden')
 })
 
-test('URL state survives history, refresh and the NFT placeholder round trip', async ({ page }) => {
+test('URL state survives history, refresh and the NFT detail round trip', async ({ page }) => {
   await page.goto('/?q=&collection=&sort=price-asc&page=2')
   await expect(grid(page).getByRole('article')).toHaveCount(8)
   await search(page, 'ape')
@@ -110,7 +110,7 @@ test('URL state survives history, refresh and the NFT placeholder round trip', a
   await expect(page.getByRole('combobox', { name: 'Ordenar por' })).toContainText('Menor preço')
   await grid(page).getByRole('link').first().click()
   await expect(page).toHaveURL(/\/nfts\/nft-/)
-  await expect(page.getByRole('heading', { name: 'Detalhes do NFT' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: /Cosmic Owl/ })).toBeVisible()
   await page.getByRole('link', { name: 'Voltar ao catálogo' }).click()
   await expect(page.getByRole('searchbox', { name: 'Buscar NFTs' })).toHaveValue('owl')
   await expect(grid(page).getByRole('heading').first()).toContainText('Cosmic Owl')

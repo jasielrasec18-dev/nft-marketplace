@@ -20,7 +20,7 @@ const nftRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/nfts/$nftId',
   validateSearch: (search: Record<string, unknown> & SearchSchemaInput) => catalogSearchSchema.parse(search),
-  component: lazyRouteComponent(() => import('@/routes/nft-placeholder-page'), 'NFTPlaceholderPage'),
+  component: lazyRouteComponent(() => import('@/routes/nft-detail-page'), 'NFTDetailPage'),
 })
 const developmentRoutes = import.meta.env.DEV ? [createRoute({
   getParentRoute: () => rootRoute,

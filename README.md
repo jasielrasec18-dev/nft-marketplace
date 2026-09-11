@@ -1,6 +1,6 @@
 # NFT Marketplace — Jungle Gaming
 
-Implementação do [Frontend Challenge da Jungle Gaming](https://github.com/junglegaming/frontend-challenge), com React e TypeScript. **Estado atual: fases 0 a 4 — fundação, backend simulado, Design System e Home/Catálogo.** A Home consome a API simulada; a rota de detalhe ainda é um placeholder.
+Implementação do [Frontend Challenge da Jungle Gaming](https://github.com/junglegaming/frontend-challenge), com React e TypeScript. **Estado atual: fases 0 a 5 concluídas — fundação, backend simulado, Design System, Home/Catálogo e NFT Detail.** Home e detalhe consomem a API simulada; o detalhe inclui adição básica ao carrinho visitante.
 
 O enunciado oficial define os comportamentos; o [Figma](https://www.figma.com/design/Ff0SksUi7UFtPWUO8kyNtw/Frontend-Challenge?node-id=0-1&p=f) define a referência visual.
 
@@ -115,9 +115,9 @@ src/
   app/           # router, providers, query, env e serviços
   api/           # Axios centralizado e erros
   contracts/     # DTOs e schemas compartilhados
-  features/      # catálogo: API, hooks e componentes de descoberta
+  features/      # catálogo, detalhe de NFT e inclusão básica no carrinho
   components/    # UI, layout e feedback existentes
-  routes/        # Home/Catálogo, placeholder de detalhe, showcase dev e 404
+  routes/        # Home/Catálogo, NFT Detail, showcase dev e 404
   mocks/         # fixtures, database, handlers, cenários e persistência
   lib/           # ETH preciso e cn
 tests/           # fundação, backend HTTP e smoke/persistência em navegador
@@ -137,7 +137,7 @@ A simulação é local a uma instância da aplicação; não é um servidor comp
 
 Para testar o build: `npm run build:mock` e `npm run preview`. O deploy final precisará servir `dist/` por HTTPS e tratar URLs de páginas como SPA. Publicação e Lighthouse pertencem às fases posteriores.
 
-**Próxima etapa: FASE 5 — NFT Detail.**
+**Próxima etapa: FASE 6 — Auth.**
 
 ## Validação da fase 2
 
@@ -153,7 +153,7 @@ Foram analisados os 23 screenshots em `src/assets/images-nft/` como fallback do 
 
 Os testes específicos estão em `tests/design-system.spec.ts`, incluídos em `npm test` e `npm run test:e2e`. Verificam teclado, foco, contraste, estados desabilitados, descrições/erros, ausência de overflow e reduced motion em 390/768/1440px. Capturas de inspeção ficam em `test-results/`; não há baselines das páginas finais.
 
-A Fase 4, descrita abaixo, implementou Home/Catálogo e sua integração HTTP. Autenticação visual, detalhes, carrinho, checkout, perfil/carteiras, realtime, Lighthouse e regressão visual final permanecem nas fases correspondentes.
+A Fase 4, descrita abaixo, implementou Home/Catálogo e sua integração HTTP. O detalhe foi concluído na Fase 5. Autenticação visual, carrinho completo, checkout, perfil/carteiras, realtime, Lighthouse e regressão visual final permanecem nas fases correspondentes.
 
 ### Verificação final da Fase 3
 
@@ -169,16 +169,53 @@ Exemplo compartilhável:
 /?q=ape&collection=golden&priceMin=0.5&priceMax=3&sort=price-asc&page=1
 ```
 
-Busca é aplicada por Enter/botão; filtros por **Aplicar filtros**. Toda alteração de busca, coleção, faixa ou ordenação reinicia a página. Voltar/avançar e refresh restauram os controles. A paginação usa os oito itens por página retornados pela API. A rota `/nfts/$nftId` oferece somente um placeholder com retorno ao catálogo e preservação dos filtros.
+Busca é aplicada por Enter/botão; filtros por **Aplicar filtros**. Toda alteração de busca, coleção, faixa ou ordenação reinicia a página. Voltar/avançar e refresh restauram os controles. A paginação usa os oito itens por página retornados pela API. Na entrega da Fase 4, a rota `/nfts/$nftId` oferecia um placeholder com retorno ao catálogo; a Fase 5 o substituiu pela experiência completa descrita abaixo, preservando os filtros.
 
 A interface distingue skeleton inicial, vazio, erro com retry, página fora do intervalo e refetch em background. **Atualizar** renova a consulta mantendo os cards; falhas de atualização preservam os resultados anteriores. Os cenários MSW e os controles documentados acima continuam disponíveis.
 
 Os cinco screenshots da Home guiaram a composição; o Figma continuou inacessível. As imagens em `public/artwork/` são SVGs originais de demonstração, com procedência em [public/artwork/README.md](public/artwork/README.md). Não são recortes nem exports oficiais. A API fornece suas URLs; a UI não importa fixtures. Coleções vêm da metadata REST, e não de uma lista local. Não há filtro de rede ou “Em alta”, pois o contrato não os suporta.
 
-A Home e o placeholder usam lazy loading de rota. Os testes em `tests/catalog.spec.ts` integram a suíte existente, incluindo HTTP, busca/filtros/preços, sort, paginação, histórico/refresh, erros/retry, latência, refetch e Sheet. As expectativas antigas do título da Home foram atualizadas para o título definitivo, preservando o propósito dos testes anteriores.
+A Home e a rota de detalhe mantêm lazy loading. Os testes em `tests/catalog.spec.ts` integram a suíte existente, incluindo HTTP, busca/filtros/preços, sort, paginação, histórico/refresh, erros/retry, latência, refetch e Sheet. As expectativas antigas do título da Home foram atualizadas para o título definitivo, preservando o propósito dos testes anteriores.
 
 ### Verificação final da Fase 4
 
 `npm run check` aprovado: TypeScript, ESLint sem warnings e build. `npm test`: **101 testes aprovados** na execução completa — 60 anteriores, 39 verificações de catálogo (13 cenários × 3 viewports) e 2 de backend para metadata/migração de assets. Home, Hero e grade foram inspecionados em 390/768/1440px; não houve overflow horizontal nos testes. Os quatro casos afetados inicialmente pela inicialização do servidor passaram na execução final após warmup, sem ampliar timeouts.
 
-O build mantém Home (~94 kB / 32 kB gzip) e placeholder de detalhe em chunks separados; o showcase permanece fora do JavaScript de produção. O bundle principal (~593 kB / 188 kB gzip) continua emitindo o aviso já registrado de 500 kB, reservado para a etapa de performance. Relatório: `playwright-report/index.html`; capturas: `test-results/`. Nenhum commit automático e nenhuma implementação de NFT Detail completo.
+O build mantém Home (~94 kB / 32 kB gzip) e placeholder de detalhe em chunks separados; o showcase permanece fora do JavaScript de produção. O bundle principal (~593 kB / 188 kB gzip) continua emitindo o aviso já registrado de 500 kB, reservado para a etapa de performance. Relatório: `playwright-report/index.html`; capturas: `test-results/`. Nenhum commit automático e nenhuma implementação de NFT Detail completo naquela fase.
+
+## NFT Detail — Fase 5
+
+Acesse diretamente `/nfts/nft-001` ou abra um card da Home. A rota lazy consulta `GET /api/nfts/:id` e funciona após refresh sem depender da Home. O retorno ao catálogo mantém busca, filtros, ordenação e página pela URL.
+
+A tela reutiliza galeria com imagem quadrada, ETHPrice, controles de edição/quantidade, Tabs e NFTCard. Exibe somente campos reais da API. Imagens repetidas da galeria são deduplicadas; miniaturas aparecem apenas quando há mais de uma URL. Os assets atuais oferecem uma imagem por NFT. Avaliações, criador, rede e atributos não existentes no contrato não são inventados.
+
+Edições sem estoque são identificadas como esgotadas e desabilitadas. A quantidade começa em 1, respeita o estoque da edição e volta a 1 ao trocar edição. Refetch limita a quantidade ao novo estoque; edição esgotada bloqueia a inclusão. Preços preservam strings decimais, inclusive um wei.
+
+**Adicionar ao carrinho** executa `POST /api/cart/items`. O backend identifica visitante/usuário por cookie; nenhuma identidade é criada pela UI. Há estado pendente, confirmação HTTP e erro acessível; conflito de estoque renova o detalhe. A inclusão não reserva estoque. A página/revisão do carrinho pertence à fase correspondente. Favoritos permanecem desabilitados e identificados como futuros, pois dependem da autenticação; não há favorito fictício nem optimistic update antecipado.
+
+Estados disponíveis: skeleton inicial, 404 específico, erro de rede/servidor com retry, refetch mantendo conteúdo, falha em background, edição indisponível e NFT esgotado. Relacionados usam a consulta REST de catálogo filtrada pela coleção, excluem a obra atual e exibem até cinco cards com navegação real.
+
+Para conferir alterações REST no detalhe aberto, use os controles existentes e clique em **Atualizar NFT**:
+
+```js
+await api.patch('/__mock/scenario', { scenario: 'sold-out', latencyMs: 0 })
+await api.patch('/__mock/nfts/nft-001', { availableQuantity: 0 })
+// Atualizar NFT mostra estoque esgotado.
+
+await api.patch('/__mock/scenario', { scenario: 'price-changed', latencyMs: 0 })
+await api.patch('/__mock/nfts/nft-001', { priceEth: '0.000000000000000001' })
+// Atualizar NFT mostra o preço exato.
+// Use /__mock/reset para restaurar as fixtures.
+```
+
+O cliente `api` é o mesmo exemplo da seção de cenários. Os cenários originais de preço/estoque disparam no fluxo de cotação/pedido; os PATCH acima preparam o estado persistido para inspeção direta, sem mudar essa regra ou implementar realtime.
+
+As referências `desktop-detalhes-nft-1/2` e `mobile-detalhesdanft-nft-1` guiaram a composição. Figma/protótipo continuaram inacessíveis. Desktop mantém imagem/painel em colunas; mobile empilha mídia, informações e CTA arredondado; tablet usa duas colunas com controles que quebram linha. Os SVGs continuam sendo demonstrações, não a arte oficial.
+
+### Verificação final da Fase 5
+
+`npm run check` passou: TypeScript, ESLint sem warnings e build. `npm test`: **140 testes aprovados** na execução completa (7 minutos), incluindo os 101 anteriores e 39 verificações de detalhe (13 cenários × 3 viewports). Acesso direto/refresh, 404, estados MSW, edições, limites, precisão ETH, inclusão visitante, conflito/erro, relacionados, URL e teclado foram validados. Capturas de 390/768/1440px foram inspecionadas; os testes não detectaram overflow horizontal nem erros de console no fluxo nominal.
+
+O detalhe continua em chunk lazy próprio (~18,23 kB / 5,99 kB gzip), com componentes compartilhados extraídos pelo bundler. O bundle principal (~593 kB / 188 kB gzip) mantém o warning pré-existente de 500 kB; não foi aumentado o limite. Nenhuma dependência nova, alteração de backend, baseline visual final ou execução de Lighthouse.
+
+Relatório local: `playwright-report/index.html`. Capturas: `test-results/nft-detail-direct-detail-*/detail.png` e `detail-content.png`. Nenhum commit automático. Próxima etapa: **FASE 6 — Auth**, não iniciada.
