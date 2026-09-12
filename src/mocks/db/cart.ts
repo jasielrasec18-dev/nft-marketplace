@@ -47,6 +47,8 @@ export function mergeGuestCart(db: MockDatabase, request: Request, userId: strin
     else target.items.push({ ...item, id: nextId(db, 'item') })
   }
   target.version += 1
+  target.couponCode ??= guest.couponCode
   guest.items = []
+  guest.couponCode = null
   guest.version += 1
 }

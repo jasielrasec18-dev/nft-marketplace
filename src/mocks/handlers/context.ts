@@ -2,7 +2,7 @@ import { delay, HttpResponse, type HttpResponseResolver } from 'msw'
 import type { MockDatabaseStore } from '../db/mock-database'
 import type { MockDatabase } from '../db/types'
 import { getScenario } from '../scenarios/config'
-import { bindRequestCookies, errorResponse, fail } from '../utils/responses'
+import { bindRequestCookies, errorResponse, fail, cookie } from '../utils/responses'
 import { settleDueOrders } from '../db/orders'
 import { updateNftAvailability, updateNftPrice } from '../db/catalog'
 import { currentUser } from '../db/session'
@@ -47,7 +47,9 @@ export function createHandlerContext(store: MockDatabaseStore, baseUrl: string, 
           const trigger = operation === 'orders.create' || (operation === 'quote.create' && timing.count > 0)
           if (!effect || !trigger || db.effects.includes(effect)) return
           const user = currentUser(db, request, false)
-          const cart = db.carts.find((item) => item.owner.kind === 'user' && item.owner.id === user?.id)
+          const cart = db.carts.find((item) => user
+            ? item.owner.kind === 'user' && item.owner.id === user.id
+            : item.owner.kind === 'guest' && item.owner.id === cookie(request, 'jungle_guest'))
           const item = cart?.items[0]
           if (!item) return
           if (effect === 'price') updateNftPrice(db, item.nftId, eth('1.29'))

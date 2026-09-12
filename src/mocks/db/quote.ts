@@ -39,6 +39,12 @@ export function calculateQuote(db: MockDatabase, cart: StoredCart, input: QuoteI
   }
   return { ...totals, cartId: cart.id, cartVersion: cart.version, lines, network: input.network, couponCode }
 }
+export function createGuestQuote(db: MockDatabase, cart: StoredCart, input: QuoteInput): Quote {
+  const values = calculateQuote(db, cart, input)
+  cart.couponCode = values.couponCode
+  // A visitor receives a price preview, never an order-authorizing stored quote.
+  return { ...values, id: nextId(db, 'guest-quote'), version: 1, expiresAt: expiresIn(db, 5 * 60 * 1000) }
+}
 export function createQuote(db: MockDatabase, userId: string, input: QuoteInput): Quote {
   const cart = db.carts.find((item) => item.id === input.cartId && item.owner.kind === 'user' && item.owner.id === userId)
     ?? fail(404, 'CART_NOT_FOUND', 'Carrinho não encontrado.')

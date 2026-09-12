@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import { CartIndicator } from '@/features/cart/components/cart-indicator'
 import { SessionActions } from '@/features/auth/components/session-actions'
 import { Link } from '@tanstack/react-router'
-import { BookOpen, Compass, Home, Menu, ShoppingCart, UserRound } from 'lucide-react'
+import { BookOpen, Compass, Home, Menu, UserRound } from 'lucide-react'
 import { PageContainer } from '@/components/layout/page-container'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
@@ -16,7 +17,7 @@ export function AppHeader() {
         <Link to="/" search hash="catalog" className="inline-flex min-h-11 items-center text-sm">Mercado</Link>
         <Link to="/" search hash="journal" className="inline-flex min-h-11 items-center text-sm">Aprenda</Link>
       </nav>
-      <div className="hidden items-center gap-3 lg:flex"><Button disabled variant="ghost" size="icon" aria-label="Carrinho — em breve"><ShoppingCart /></Button><SessionActions /></div>
+      <div className="hidden items-center gap-3 lg:flex"><CartIndicator /><SessionActions /></div>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild><Button variant="ghost" size="icon" className="lg:hidden" aria-label="Abrir menu"><Menu /></Button></SheetTrigger>
         <SheetContent><SheetTitle>KURIO</SheetTitle><SheetDescription>Arte, criadores e cultura.</SheetDescription>
@@ -28,7 +29,7 @@ export function AppHeader() {
       <Button asChild variant="ghost" size="icon"><Link to="/" aria-label="Início"><Home /></Link></Button>
       <Button asChild variant="ghost" size="icon"><Link to="/" search hash="catalog" aria-label="Explorar catálogo"><Compass /></Link></Button>
       <Button asChild variant="ghost" size="icon"><Link to="/" search hash="journal" aria-label="Diário da Cunhagem"><BookOpen /></Link></Button>
-      <Button disabled variant="ghost" size="icon" aria-label="Carrinho — em breve"><ShoppingCart /></Button>
+      <CartIndicator />
       <Button disabled variant="ghost" size="icon" aria-label="Perfil — em breve"><UserRound /></Button>
     </nav>
   </header>

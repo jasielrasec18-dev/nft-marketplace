@@ -7,7 +7,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   // Pre-transform lazy entry pages so development starts without import waterfalls.
-  server: { warmup: { clientFiles: ['./src/routes/home-page.tsx', './src/routes/nft-detail-page.tsx', './src/routes/auth-page.tsx', './src/routes/design-system-page.tsx'] } },
+  server: { warmup: { clientFiles: ['./src/routes/home-page.tsx', './src/routes/nft-detail-page.tsx', './src/routes/auth-page.tsx', './src/routes/cart-page.tsx', './src/routes/design-system-page.tsx'] } },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

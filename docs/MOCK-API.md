@@ -30,7 +30,7 @@ Prefixo padrão /api. Payloads JSON; ETH sempre string decimal. Requests da apli
 | POST | /wallets | WalletInput → Wallet (201) |
 | PATCH | /wallets/:id | campos parciais de WalletInput → Wallet |
 
-Favoritos, quote, pedidos, perfil e carteiras exigem sessão. Carrinho aceita visitante ou usuário; não aceita escolher proprietário pelo payload. Paginação tem tamanho fixo 8. Sort: recent, price-asc, price-desc ou name; desempate estável por ID. Faixas invertidas de preço retornam 422.
+Favoritos, pedidos, perfil e carteiras exigem sessão. Desde a Fase 7, quote aceita também o próprio carrinho visitante como prévia; essa prévia não autoriza pedidos, mesmo após login. A resposta inclui Date para renovar a validade sem depender do relógio absoluto do navegador. Carrinho aceita visitante ou usuário; não aceita escolher proprietário pelo payload. Paginação tem tamanho fixo 8. Sort: recent, price-asc, price-desc ou name; desempate estável por ID. Faixas invertidas de preço retornam 422.
 
 Carteiras: label, address (0x + 40 caracteres hex), network (ethereum/polygon), role (primary/secondary). Só uma de cada função por usuário; endereço/rede duplicados geram conflito.
 

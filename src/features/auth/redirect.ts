@@ -5,7 +5,7 @@ export function safeReturnTo(value: unknown): string {
   try {
     const url = new URL(value, 'https://marketplace.invalid')
     const pathname = decodeURIComponent(url.pathname)
-    const allowed = pathname === '/' || /^\/nfts\/[a-zA-Z0-9_-]+$/.test(pathname) ||
+    const allowed = pathname === '/' || pathname === '/cart' || /^\/nfts\/[a-zA-Z0-9_-]+$/.test(pathname) ||
       /^\/(checkout|account\/(profile|wallets)|orders(?:\/[a-zA-Z0-9_-]+)?)$/.test(pathname)
     if (url.origin !== 'https://marketplace.invalid' || !allowed) return '/'
     return url.pathname + url.search + url.hash

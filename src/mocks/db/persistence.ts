@@ -17,9 +17,12 @@ export function createPersistence(storage: MockStorage) {
         const database = databaseSchema.parse(JSON.parse(serialized))
 
         const isTemplate = (url: string) => /(?:^|\/)hero(?:-[\w-]+)?\.png(?:$|\?)/.test(url)
+        const currentArtwork = (url: string, collection: string) => isTemplate(url)
+          ? demoArtwork(collection)
+          : /^\/artwork\/(?:golden|jungle|cosmic|pixel|default)\.svg$/.test(url) ? url.replace(/\.svg$/, '.png') : url
         for (const nft of database.nfts) {
-          if (isTemplate(nft.imageUrl)) nft.imageUrl = demoArtwork(nft.collection)
-          nft.gallery = nft.gallery.map((url) => isTemplate(url) ? demoArtwork(nft.collection) : url)
+          nft.imageUrl = currentArtwork(nft.imageUrl, nft.collection)
+          nft.gallery = nft.gallery.map((url) => currentArtwork(url, nft.collection))
         }
         return database
       } catch {

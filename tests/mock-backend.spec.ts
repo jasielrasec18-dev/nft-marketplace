@@ -367,15 +367,15 @@ test('retired template artwork migrates without resetting accounts, prices or or
     const nft = db.nfts.find((item) => item.id === 'nft-001')
     if (!nft) throw new Error('Missing deterministic NFT')
     nft.imageUrl = '/assets/hero-OLD.png'
-    nft.gallery = ['/assets/hero-OLD.png', '/custom-art.svg']
+    nft.gallery = ['/assets/hero-OLD.png', '/artwork/golden.svg', '/custom-art.svg']
   })
   await login(api)
   const quote = await quoteFor(api)
   await api.post<Order>('/orders', orderInput(quote), { headers: { 'Idempotency-Key': 'artwork-migration' } })
   const before = store.read()
   const restored = (await createMockDatabase(storage)).read()
-  expect(restored.nfts[0]?.imageUrl).toBe('/artwork/golden.svg')
-  expect(restored.nfts[0]?.gallery).toEqual(['/artwork/golden.svg', '/custom-art.svg'])
+  expect(restored.nfts[0]?.imageUrl).toBe('/artwork/golden.png')
+  expect(restored.nfts[0]?.gallery).toEqual(['/artwork/golden.png', '/artwork/golden.png', '/custom-art.svg'])
   expect(restored.nfts[0]?.priceEth).toBe(before.nfts[0]?.priceEth)
   expect(restored.sessions).toEqual(before.sessions)
   expect(restored.users).toEqual(before.users)
@@ -405,4 +405,38 @@ test('private guard restores HTTP session, preserves return URL and distinguishe
   await api.patch('/__mock/scenario', { scenario: 'server-error' })
   await expect(requireSession(services, destination)).rejects.toMatchObject({ status: 500, code: 'SERVICE_UNAVAILABLE' })
   client.clear()
+})
+
+test('guest quote uses authoritative money and cookie ownership without authorizing an order', async () => {
+  const cart = (await api.post<Cart>('/cart/items', { nftId: 'nft-001', editionId: 'standard', quantity: 1 })).data
+  const response = await api.post('/quote', { cartId: cart.id, cartVersion: cart.version, couponCode: 'VALID10', network: 'ethereum' })
+  expect(response.status).toBe(201)
+  expect(response.data.totalEth).toBe('1.076')
+  expect(Date.parse(response.data.expiresAt) - Date.parse(response.headers.date)).toBe(300000)
+  expect((await api.get<Cart>('/cart')).data.couponCode).toBe('VALID10')
+  const other = createTestClient()
+  await expect(other.post('/quote', { cartId: cart.id, cartVersion: cart.version, couponCode: null, network: 'ethereum' })).rejects.toMatchObject({ status: 404 })
+  await expect(api.post('/orders', orderInput(response.data), { headers: { 'Idempotency-Key': 'guest-denied' } })).rejects.toMatchObject({ status: 401 })
+  await login(api)
+  await expect(api.post('/orders', orderInput(response.data), { headers: { 'Idempotency-Key': 'guest-preview-denied' } })).rejects.toMatchObject({ status: 404 })
+  const merged = (await api.get<Cart>('/cart')).data
+  expect(merged.items.find((item) => item.nftId === 'nft-001')?.quantity).toBe(2)
+  expect(merged.couponCode).toBe('VALID10')
+  await api.post('/auth/logout')
+  expect((await api.get<Cart>('/cart')).data.items).toEqual([])
+  expect((await api.get<Cart>('/cart')).data.couponCode).toBeNull()
+  await login(api)
+  expect((await api.get<Cart>('/cart')).data.items.find((item) => item.nftId === 'nft-001')?.quantity).toBe(2)
+})
+
+test('guest quotes reflect scenario price and availability changes without sharing another visitor cart', async () => {
+  await api.post('/cart/items', { nftId: 'nft-001', editionId: 'standard', quantity: 1 })
+  await quoteFor(api)
+  await api.patch('/__mock/scenario', { scenario: 'price-changed' })
+  await quoteFor(api)
+  expect((await quoteFor(api)).lines[0]?.unitPriceEth).toBe('1.29')
+  await api.patch('/__mock/scenario', { scenario: 'sold-out' })
+  await quoteFor(api)
+  await expect(quoteFor(api)).rejects.toMatchObject({ code: 'OUT_OF_STOCK' })
+  expect((await api.get<Cart>('/cart')).data.items[0]?.nft.availableQuantity).toBe(0)
 })

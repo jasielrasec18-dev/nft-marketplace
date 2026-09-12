@@ -19,6 +19,10 @@ export const privateKeys = {
   order: (userId: string, orderId: string) => ['private', userId, 'orders', orderId] as const,
 }
 export const cartKeys = {
+  mutations: ['cart-mutation'] as const,
+  current: (userId: string | undefined, generation: number) => userId
+    ? ['private', userId, 'cart'] as const
+    : ['guest', 'current', generation, 'cart'] as const,
   guests: ['guest'] as const,
   detail: (owner: CartOwner) => owner.kind === 'user'
     ? [...privateKeys.user(owner.id), 'cart'] as const

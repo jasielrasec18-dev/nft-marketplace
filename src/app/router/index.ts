@@ -2,6 +2,7 @@ import { createRootRouteWithContext, createRoute, createRouter, lazyRouteCompone
 import type { AppServices } from '@/app/services'
 import { catalogSearchSchema } from '@/contracts/nft'
 import { authSearchSchema, safeReturnTo } from '@/features/auth/redirect'
+import { requireSession } from '@/features/auth/require-session'
 import { AppLayout } from '@/components/layout/app-layout'
 import { RouteError } from '@/components/feedback/route-error'
 import { NotFoundPage } from '@/routes/not-found-page'
@@ -35,12 +36,23 @@ const registerRoute = createRoute({
   validateSearch: (search: Record<string, unknown> & SearchSchemaInput) => authSearchSchema.parse(search),
   component: lazyRouteComponent(() => import('@/routes/auth-page'), 'RegisterPage'),
 })
+const cartRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/cart',
+  component: lazyRouteComponent(() => import('@/routes/cart-page'), 'CartPage'),
+})
+const checkoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/checkout',
+  beforeLoad: ({ context, location }) => requireSession(context, location.href),
+  component: lazyRouteComponent(() => import('@/routes/checkout-handoff-page'), 'CheckoutHandoffPage'),
+})
 const developmentRoutes = import.meta.env.DEV ? [createRoute({
   getParentRoute: () => rootRoute,
   path: '/design-system',
   component: lazyRouteComponent(() => import('@/routes/design-system-page'), 'DesignSystemPage'),
 })] : []
-const routeTree = rootRoute.addChildren([homeRoute, nftRoute, loginRoute, registerRoute, ...developmentRoutes])
+const routeTree = rootRoute.addChildren([homeRoute, nftRoute, loginRoute, registerRoute, cartRoute, checkoutRoute, ...developmentRoutes])
 
 export function createAppRouter(services: AppServices) {
   const router = createRouter({

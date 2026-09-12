@@ -1,6 +1,6 @@
 # NFT Marketplace — Jungle Gaming
 
-Implementação do [Frontend Challenge da Jungle Gaming](https://github.com/junglegaming/frontend-challenge), com React e TypeScript. **Estado atual: fases 0 a 6 implementadas — fundação, backend simulado, Design System, Home/Catálogo, NFT Detail e Auth/Session.** Home, detalhe e autenticação consomem a API simulada; o detalhe inclui adição básica ao carrinho, com merge do visitante após login.
+Implementação do [Frontend Challenge da Jungle Gaming](https://github.com/junglegaming/frontend-challenge), com React e TypeScript. **Estado atual: fases 0 a 7 concluídas — fundação, backend simulado, Design System, Home/Catálogo, NFT Detail, Auth/Session e Carrinho.** Home, detalhe, autenticação e carrinho consomem a API simulada. Quantidades, cupons e resumo financeiro passam pelo backend, com merge do visitante após login.
 
 O enunciado oficial define os comportamentos; o [Figma](https://www.figma.com/design/Ff0SksUi7UFtPWUO8kyNtw/Frontend-Challenge?node-id=0-1&p=f) define a referência visual.
 
@@ -115,9 +115,9 @@ src/
   app/           # router, providers, query, env e serviços
   api/           # Axios centralizado e erros
   contracts/     # DTOs e schemas compartilhados
-  features/      # catálogo, detalhe de NFT e inclusão básica no carrinho
+  features/      # catálogo, detalhe, Auth e carrinho/cotação
   components/    # UI, layout e feedback existentes
-  routes/        # Home/Catálogo, NFT Detail, showcase dev e 404
+  routes/        # Home, NFT Detail, Auth, Cart, continuidade protegida, showcase dev e 404
   mocks/         # fixtures, database, handlers, cenários e persistência
   lib/           # ETH preciso e cn
 tests/           # fundação, backend HTTP e smoke/persistência em navegador
@@ -137,7 +137,7 @@ A simulação é local a uma instância da aplicação; não é um servidor comp
 
 Para testar o build: `npm run build:mock` e `npm run preview`. O deploy final precisará servir `dist/` por HTTPS e tratar URLs de páginas como SPA. Publicação e Lighthouse pertencem às fases posteriores.
 
-**Próxima etapa: FASE 7 — Carrinho. Não iniciada.**
+**Próxima etapa: FASE 8 — Conta / Perfil / Carteiras. Não iniciada.**
 
 ## Validação da fase 2
 
@@ -250,4 +250,42 @@ Login e cadastro foram inspecionados em 390/768/1440px. Os testes verificaram fo
 
 Auth permanece em chunk lazy (~41,42 kB / 14,80 kB gzip); o principal ficou em ~337,78 kB / 107,56 kB gzip. O build atual não emite warning de chunk acima de 500 kB; isso não substitui a avaliação final de performance. Nenhuma dependência, contrato, handler ou fixture foi alterado nesta fase. Sem Lighthouse ou realtime.
 
-Relatório: `playwright-report/index.html`. Capturas: `test-results/auth-direct-Login-and-Regi-*/login.png` e `register.png`. Login social e recuperação de senha continuam indisponíveis por não terem endpoints. Próxima etapa: **FASE 7 — Carrinho**, não iniciada. Nenhum commit automático; sugestão: `feat(auth): implement authentication and session flows`.
+Relatório: `playwright-report/index.html`. Capturas: `test-results/auth-direct-Login-and-Regi-*/login.png` e `register.png`. Login social e recuperação de senha continuam indisponíveis por não terem endpoints. Na entrega da Fase 6, a próxima etapa era Carrinho; sua implementação está descrita abaixo. Nenhum commit automático; sugestão: `feat(auth): implement authentication and session flows`.
+
+## Carrinho — Fase 7
+
+A rota lazy `/cart` atende visitante e usuário autenticado, inclusive por acesso direto e refresh. NFT Detail inclui itens pela API e oferece **Ver carrinho**. O Header e a página compartilham a mesma consulta; o contador soma unidades, não linhas.
+
+Guest cart continua usando o mecanismo já existente: cookie opaco + REST + MockDatabase persistida localmente. Não há uma segunda cópia em localStorage na UI. Quantidade e remoção aguardam PATCH/DELETE; falhas mantêm os últimos dados confirmados. Refetch mantém as linhas e bloqueia o resumo quando não consegue confirmar o estado atual.
+
+O login/cadastro mantém o merge atômico do backend: soma a quantidade de edições iguais, limpa o visitante somente após confirmação e não repete a soma ao autenticar novamente. Quantidades acima do estoque são preservadas para revisão, com aviso e ajuste explícito. O cupom do visitante é transferido quando o usuário ainda não tem outro. Logout retorna ao carrinho visitante separado, sem copiar itens privados.
+
+**Aplicar** envia o cupom em `POST /quote`; **Remover cupom** pede nova cotação sem código. `VALID10` aplica 10%; `EXPIRED10` e códigos desconhecidos geram erros distintos, associados ao campo. Apenas cupons confirmados são persistidos no carrinho pelo backend e restaurados após refresh.
+
+Subtotal, desconto, taxa e total vêm da quote. A rede é Ethereum nesta fase; não foi criado seletor de rede/carteira. ETH mantém strings decimais e big.js. A cotação é renovada após mudanças e ao vencer; falhas impedem a continuidade. A API passou a permitir uma cotação de prévia para o próprio visitante, sem autorizar pedidos. Usuários continuam recebendo a cotação persistida existente.
+
+Use **Atualizar carrinho** para consultar preço/estoque atuais. Os cenários `price-changed` e `sold-out` mantêm o gatilho da segunda cotação após selecionar o cenário; o PATCH de cenário reinicia seus contadores. Alternativamente, use os controles REST de NFT documentados acima e atualize. Não há realtime nesta fase.
+
+**Conectar e finalizar** abre Login com `redirect=/checkout`. Após o merge, uma rota protegida de continuidade informa que a finalização ainda está indisponível e oferece retorno ao carrinho. Ela não cria pedido, seleciona carteira nem realiza pagamento. O checkout completo permanece fora desta entrega.
+
+As três referências locais de carrinho guiaram a lista/resumo no desktop, empilhamento mobile e continuação no rodapé. Figma permaneceu inacessível. Componentes existentes foram reutilizados; recomendações vêm da API de catálogo. Na retomada final, os PNGs já presentes em public/artwork foram preservados e passaram a ser servidos diretamente: os wrappers SVG com imagens externas produziam miniaturas vazias. A restauração do mock atualiza somente URLs conhecidas das artes antigas, preservando contas, preços, carrinhos e snapshots de pedidos.
+
+### Verificação final da Fase 7
+
+**Fase 7 concluída.** `npm run check` passou após as últimas alterações: TypeScript, ESLint sem warnings e build de produção. O carrinho permanece em chunk lazy de 12,86 kB / 4,55 kB gzip; o principal ficou em 334,51 kB / 107,01 kB gzip, sem aviso de chunk acima de 500 kB. Nenhuma dependência nova ou mudança de DTO/schema de banco.
+
+A suíte contém **272 testes**: 198 anteriores e 74 novos (24 cenários de carrinho × 3 viewports e duas integrações de backend). A execução completa com três workers terminou com **266 aprovados e seis timeouts** (18,2 minutos). Os casos afetados foram repetidos nas três larguras, junto a todo o backend: a primeira repetição teve 45 aprovações e um timeout adicional no carregamento lento desktop; a rodada final, com arquivos estáveis e um worker, teve **46/46 aprovados** (2,4 minutos), sem retries automáticos ou aumento de timeouts. Todos os 272 cenários obtiveram aprovação ao longo das validações; isso não equivale a uma execução completa única sem falhas. A estabilidade da suíte com três workers neste ambiente permanece uma limitação registrada.
+
+Comando da rodada final:
+
+```sh
+npm test -- --workers=1 --grep 'mock-backend|price and stock refetch|authenticated users skip|quote failure leaves|slow cart, quote|cart layout and keyboard|background refresh retains cards'
+```
+
+Foram verificados guest/auth, acesso direto/refresh, quantidade/remoção por HTTP, contador compartilhado, isolamento A/B, merge idempotente com conflito de estoque, cupom válido/inválido/expirado, remoção/persistência, valores exatos até 1 wei, preço/estoque atualizados, expiração da quote com relógios diferentes, resposta atrasada, erros/retry e continuidade protegida. A migração das imagens preserva contas, sessões, preços e snapshots de pedidos.
+
+Capturas de 390/768/1440px foram inspecionadas; teclado, foco, campos associados a erros, skeletons, estados pendentes e ausência de overflow horizontal foram testados. As referências locais guiaram a composição; Figma permaneceu inacessível. Não foi estabelecida baseline visual definitiva, executado Lighthouse ou testado teclado virtual físico.
+
+Relatório final: `playwright-report/index.html`. Execução completa preservada: `reports/playwright-report-full/index.html`; repetição intermediária: `reports/playwright-report-targeted-first/index.html`. Capturas atuais: `test-results/cart-cart-layout-*/cart.png`, `cart-item.png` e `cart-summary.png`; capturas da suíte completa também estão em `reports/test-results-full/`.
+
+Checkout permanece somente como continuidade protegida; pagamento, pedidos na UI, carteira, realtime e avaliação final de performance ficam fora desta entrega. **Próxima fase: Fase 8 — Conta / Perfil / Carteiras, não iniciada.** Nenhum commit automático. Sugestão: `feat(cart): implement persistent cart and quote flow`.
