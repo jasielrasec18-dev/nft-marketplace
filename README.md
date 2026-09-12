@@ -4,6 +4,68 @@ Implementação do [Frontend Challenge da Jungle Gaming](https://github.com/jung
 
 O enunciado oficial define os comportamentos; o [Figma](https://www.figma.com/design/Ff0SksUi7UFtPWUO8kyNtw/Frontend-Challenge?node-id=0-1&p=f) define a referência visual.
 
+## 🚧 Status da implementação
+
+> **Versão parcial do Frontend Challenge da Jungle Gaming.**
+
+O projeto está funcional e publicado para demonstração das principais funcionalidades já implementadas, porém alguns requisitos da versão final do desafio ainda estão em desenvolvimento.
+
+### ✅ Implementado
+
+- Arquitetura base com React, TypeScript e Vite
+- TanStack Router para roteamento
+- TanStack Query para gerenciamento de estado servidor
+- Axios para comunicação com a API
+- API simulada com MSW
+- Persistência do ambiente mock
+- Design System e componentes reutilizáveis
+- Home / Catálogo de NFTs
+- Busca por NFTs
+- Filtros combináveis
+- Ordenação
+- Paginação sincronizada com a URL
+- Página de detalhes do NFT
+- Seleção de edição
+- Controle de quantidade e disponibilidade
+- Autenticação
+- Cadastro de usuário
+- Recuperação de sessão após refresh
+- Logout
+- Carrinho para visitante e usuário autenticado
+- Persistência do carrinho
+- Merge do carrinho após autenticação
+- Alteração de quantidade
+- Remoção de itens
+- Aplicação e validação de cupons
+- Quote com subtotal, desconto, taxa de rede e total
+- Estados de loading, erro, retry e empty state
+- Interface responsiva
+- Testes automatizados das funcionalidades implementadas
+
+### 🚧 Em desenvolvimento
+
+- Perfil completo do colecionador
+- Gerenciamento completo de carteiras
+- Checkout
+- Revalidação final de preço e disponibilidade
+- Criação de pedidos com idempotência
+- Simulação de pagamento
+- Confirmação e recibo do pedido
+- Atualizações em tempo real com Socket.IO
+- Reconciliação após reconnect
+- Cobertura E2E final
+- Regressão visual final
+- Auditoria Lighthouse
+- Otimizações finais de performance
+
+### 🌐 Demo
+
+A versão publicada utiliza o **Mock Service Worker (MSW)** para simular a API REST diretamente no navegador.
+
+Não é necessário backend externo para utilizar a demonstração.
+
+> Algumas funcionalidades apresentadas no layout original do desafio podem ainda não estar disponíveis nesta versão parcial.
+
 ## Executar
 
 Node.js 22.12+ e npm. No PowerShell, use `npm.cmd` e `npx.cmd` se os scripts `.ps1` estiverem bloqueados.
@@ -289,3 +351,23 @@ Capturas de 390/768/1440px foram inspecionadas; teclado, foco, campos associados
 Relatório final: `playwright-report/index.html`. Execução completa preservada: `reports/playwright-report-full/index.html`; repetição intermediária: `reports/playwright-report-targeted-first/index.html`. Capturas atuais: `test-results/cart-cart-layout-*/cart.png`, `cart-item.png` e `cart-summary.png`; capturas da suíte completa também estão em `reports/test-results-full/`.
 
 Checkout permanece somente como continuidade protegida; pagamento, pedidos na UI, carteira, realtime e avaliação final de performance ficam fora desta entrega. **Próxima fase: Fase 8 — Conta / Perfil / Carteiras, não iniciada.** Nenhum commit automático. Sugestão: `feat(cart): implement persistent cart and quote flow`.
+
+## 🚀 Deploy
+
+O projeto pode ser publicado na Vercel utilizando o build de demonstração com MSW habilitado.
+
+### Vercel
+
+Configuração recomendada:
+
+```text
+Framework Preset: Vite
+
+Install Command:
+npm ci
+
+Build Command:
+npm run build:mock
+
+Output Directory:
+dist
