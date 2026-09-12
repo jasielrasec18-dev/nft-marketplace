@@ -1,19 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Cart } from '@/contracts/cart'
 import type { QuoteInput } from '@/contracts/quote'
+import type { Network } from '@/contracts/wallet'
 import { useServices } from '@/app/providers/services-context'
 import { cartKeys, quoteKeys } from '@/app/query/keys'
 import { ApiError } from '@/api/errors'
 import { getQuote } from '../api/cart'
 
-export function useCartQuote(cart: Cart, couponCode: string | null, generation: number, blocked: boolean) {
-  const { api, sessionLifecycle } = useServices()
+export function useCartQuote(cart: Cart, couponCode: string | null, generation: number, blocked: boolean, network: Network = 'ethereum') {
+  const { api, sessionLifecycle, realtime } = useServices()
+  useSyncExternalStore(realtime.subscribe, realtime.snapshot)
+  const liveFingerprint = realtime.fingerprint(cart.items.map((item) => item.nft.id))
   const client = useQueryClient()
   const [revision, setRevision] = useState(0)
   const last = useRef('')
-  const input = useMemo<QuoteInput>(() => ({ cartId: cart.id, cartVersion: cart.version, couponCode, network: 'ethereum' }), [cart.id, cart.version, couponCode])
-  const fingerprint = JSON.stringify([generation, cart.owner, input, cart.items.map((item) => [item.id, item.quantity, item.nft.version]), revision])
+  const input = useMemo<QuoteInput>(() => ({ cartId: cart.id, cartVersion: cart.version, couponCode, network }), [cart.id, cart.version, couponCode, network])
+  const fingerprint = JSON.stringify([generation, cart.owner, input, cart.items.map((item) => [item.id, item.quantity, item.nft.version]), revision, liveFingerprint])
   const queryKey = cartKeys.current(cart.owner.kind === 'user' ? cart.owner.id : undefined, generation)
   const mutation = useMutation({
     mutationKey: cart.owner.kind === 'user' ? quoteKeys.all(cart.owner.id) : [...queryKey, 'quotes'],
@@ -50,5 +53,6 @@ export function useCartQuote(cart: Cart, couponCode: string | null, generation: 
     error,
     isPending: !error && !data || isPending,
     refresh: () => setRevision((value) => value + 1),
+    revalidate: () => mutation.mutateAsync({ input, fingerprint }),
   }
 }

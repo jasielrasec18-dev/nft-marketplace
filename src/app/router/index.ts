@@ -45,14 +45,28 @@ const checkoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/checkout',
   beforeLoad: ({ context, location }) => requireSession(context, location.href),
-  component: lazyRouteComponent(() => import('@/routes/checkout-handoff-page'), 'CheckoutHandoffPage'),
+  component: lazyRouteComponent(() => import('@/routes/checkout-page'), 'CheckoutPage'),
+})
+const orderRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/orders/$orderId',
+  beforeLoad: async ({ context, location }) => { await requireSession(context, location.href) },
+  component: lazyRouteComponent(() => import('@/routes/order-page'), 'OrderPage'),
 })
 const developmentRoutes = import.meta.env.DEV ? [createRoute({
   getParentRoute: () => rootRoute,
   path: '/design-system',
   component: lazyRouteComponent(() => import('@/routes/design-system-page'), 'DesignSystemPage'),
 })] : []
-const routeTree = rootRoute.addChildren([homeRoute, nftRoute, loginRoute, registerRoute, cartRoute, checkoutRoute, ...developmentRoutes])
+const accountRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/account',
+  beforeLoad: async ({ context, location }) => { await requireSession(context, location.href) },
+  component: lazyRouteComponent(() => import('@/routes/account/account-layout'), 'AccountLayout'),
+})
+const profileRoute = createRoute({ getParentRoute: () => accountRoute, path: '/profile', component: lazyRouteComponent(() => import('@/routes/account/profile-page'), 'ProfilePage') })
+const walletsRoute = createRoute({ getParentRoute: () => accountRoute, path: '/wallets', component: lazyRouteComponent(() => import('@/routes/account/wallets-page'), 'WalletsPage') })
+const routeTree = rootRoute.addChildren([homeRoute, nftRoute, loginRoute, registerRoute, cartRoute, checkoutRoute, orderRoute, accountRoute.addChildren([profileRoute, walletsRoute]), ...developmentRoutes])
 
 export function createAppRouter(services: AppServices) {
   const router = createRouter({

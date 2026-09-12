@@ -15,3 +15,4 @@ export interface Wallet extends WalletInput {
   userId: ResourceId
 }
 export type WalletConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'declined'
+export interface WalletConnection { walletId: ResourceId; network: Network; status: 'connected' | 'declined' }

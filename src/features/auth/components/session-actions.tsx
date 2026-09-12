@@ -14,7 +14,7 @@ export function SessionActions({ onNavigate }: { onNavigate?: () => void }) {
   if (session.isError) return <div className="space-y-2"><p className="type-caption text-muted-foreground">Sessão não verificada.</p><Button variant="outline" size="sm" disabled={session.isFetching} onClick={() => void session.refetch()}>Verificar sessão</Button></div>
   if (!session.data) return <Button asChild size="sm"><Link to="/login" search={{ redirect: safeReturnTo(href) }} onClick={onNavigate}>Entrar</Link></Button>
   return <div className="max-w-xs space-y-2">
-    <div className="flex flex-wrap items-center gap-3"><span className="type-caption max-w-36 truncate" title={session.data.user.name}>{session.data.user.name}</span>
+    <div className="flex flex-wrap items-center gap-3"><Link to="/account/profile" onClick={onNavigate} className="type-caption inline-flex min-h-11 max-w-44 items-center gap-2" title={session.data.user.name}>{session.data.user.avatarUrl && <img src={session.data.user.avatarUrl} alt="" className="size-7 shrink-0 rounded-full object-cover" />}<span className="truncate">{session.data.user.name}</span></Link>
       <Button variant="outline" size="sm" disabled={logout.isPending} aria-busy={logout.isPending} onClick={() => logout.mutate(undefined, { onSuccess: () => { onNavigate?.(); void router.invalidate() } })}>{logout.isPending ? 'Saindo…' : 'Sair'}</Button>
     </div>
     {logout.isError && <InlineAlert variant="error">Não foi possível sair. Sua sessão foi mantida. Tente novamente.</InlineAlert>}

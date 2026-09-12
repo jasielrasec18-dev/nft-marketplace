@@ -9,6 +9,7 @@ export async function createMockDatabase(storage: MockStorage, initial: ResetMoc
   persistence.save(state)
   let queue: Promise<unknown> = Promise.resolve()
   let generation = 0
+  const observers = new Set<(previous: MockDatabase, next: MockDatabase) => void>()
 
   function enqueue<T>(operation: () => Promise<T> | T): Promise<T> {
     const result = queue.then(operation)
@@ -17,6 +18,10 @@ export async function createMockDatabase(storage: MockStorage, initial: ResetMoc
   }
 
   return {
+    observe(listener: (previous: MockDatabase, next: MockDatabase) => void) {
+      observers.add(listener)
+      return () => { observers.delete(listener) }
+    },
     get generation() { return generation },
     read(): MockDatabase { return structuredClone(state) },
     transaction<T>(operation: (draft: MockDatabase) => T | Promise<T>): Promise<T> {
@@ -24,7 +29,9 @@ export async function createMockDatabase(storage: MockStorage, initial: ResetMoc
         const draft = structuredClone(state)
         const result = await operation(draft)
         persistence.save(draft)
+        const previous = state
         state = draft
+        observers.forEach((listener) => listener(previous, state))
         return result
       })
     },

@@ -30,7 +30,7 @@ export function AppHeader() {
       <Button asChild variant="ghost" size="icon"><Link to="/" search hash="catalog" aria-label="Explorar catálogo"><Compass /></Link></Button>
       <Button asChild variant="ghost" size="icon"><Link to="/" search hash="journal" aria-label="Diário da Cunhagem"><BookOpen /></Link></Button>
       <CartIndicator />
-      <Button disabled variant="ghost" size="icon" aria-label="Perfil — em breve"><UserRound /></Button>
+      <Button asChild variant="ghost" size="icon"><Link to="/account/profile" aria-label="Meu perfil"><UserRound /></Link></Button>
     </nav>
   </header>
 }

@@ -1,7 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { env } from '@/app/env'
-import App from './App'
 import '@/styles/globals.css'
 
 async function bootstrap() {
@@ -10,6 +9,7 @@ async function bootstrap() {
     await startMockWorker()
   }
   const root = document.getElementById('root')
+  const { default: App } = await import('./App')
   if (!root) throw new Error('Elemento root não encontrado.')
   createRoot(root).render(<StrictMode><App /></StrictMode>)
 }

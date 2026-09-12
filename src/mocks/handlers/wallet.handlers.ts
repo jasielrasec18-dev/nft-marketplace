@@ -1,4 +1,5 @@
 import { http, HttpResponse } from 'msw'
+import { z } from 'zod'
 import { walletInputSchema } from '@/contracts/wallet'
 import { requireUser } from '../db/session'
 import { readBody, fail } from '../utils/responses'
@@ -16,6 +17,12 @@ function checkWallet(db: MockDatabase, userId: string, input: WalletInput, id?: 
 }
 export function walletHandlers(ctx: HandlerContext) {
   return [
+    http.post(ctx.url('/wallets/:id/connect'), ctx.wrap('wallets.connect', async (db, request, params) => {
+      const user = requireUser(db, request)
+      const wallet = db.wallets.find((item) => item.id === pathParam(params, 'id') && item.userId === user.id) ?? fail(404, 'WALLET_NOT_FOUND', 'Carteira não encontrada.')
+      const input = await readBody(request, z.object({ decision: z.enum(['accept', 'decline']) }).strict())
+      return HttpResponse.json({ walletId: wallet.id, network: wallet.network, status: input.decision === 'accept' ? 'connected' : 'declined' })
+    })),
     http.get(ctx.url('/wallets'), ctx.wrap('wallets.get', (db, request) => {
       const user = requireUser(db, request)
       return HttpResponse.json(db.wallets.filter((wallet) => wallet.userId === user.id))

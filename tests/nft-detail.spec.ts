@@ -39,7 +39,7 @@ test('direct detail and refresh render authoritative HTTP data without visiting 
   await expect(purchase(page)).toContainText(nft.description)
   await expect(page.getByRole('radio', { name: 'Standard', exact: true })).toBeChecked()
   await expect(page.getByRole('radio', { name: 'Limited · Esgotada', exact: true })).toBeDisabled()
-  await expect(page.getByRole('button', { name: 'Favoritar · em breve' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Favoritar Golden Ape #001', exact: true })).toBeEnabled()
   await expect(add(page)).toBeEnabled()
   const media = page.getByRole('region', { name: 'Galeria do NFT' }).getByRole('img')
   await expect(media).toHaveAttribute('src', nft.imageUrl)

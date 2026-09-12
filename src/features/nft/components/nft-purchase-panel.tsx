@@ -1,6 +1,7 @@
+import { FavoriteControl } from '@/features/favorites/favorite-control'
 import { useId, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { Heart, ShoppingCart } from 'lucide-react'
+import { ShoppingCart } from 'lucide-react'
 import type { NFT } from '@/contracts/nft'
 import { ApiError } from '@/api/errors'
 import { Button } from '@/components/ui/button'
@@ -57,6 +58,6 @@ export function NFTPurchasePanel({ nft }: { nft: NFT }) {
     </div>
     {add.isSuccess && <InlineAlert variant="success">{add.variables.quantity} unidade(s) de {nft.name} adicionada(s) ao carrinho. <Link to="/cart" className="inline-flex min-h-11 items-center underline">Ver carrinho</Link></InlineAlert>}
     {add.isError && <InlineAlert variant="error">{add.error instanceof ApiError ? add.error.message : 'Não foi possível adicionar ao carrinho.'}</InlineAlert>}
-    <div className="space-y-2"><Button variant="outline" disabled aria-describedby={`${id}-favorites`}><Heart aria-hidden="true" />Favoritar · em breve</Button><p id={`${id}-favorites`} className="type-caption text-muted-foreground">Favoritos estarão disponíveis com o acesso à sua conta.</p></div>
+    <FavoriteControl nftId={nft.id} name={nft.name} />
   </section>
 }
