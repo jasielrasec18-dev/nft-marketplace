@@ -1,8 +1,8 @@
-# Arquitetura — fundação, Mock Backend e Design System
+# Arquitetura — NFT Marketplace
 
 ## Escopo atual
 
-Fases 0 e 1 preservadas; fase 2 adiciona backend simulado, persistência e cenários; fase 3 adiciona o Design System. A Fase 4 acrescenta Home/Catálogo com leitura HTTP; a Fase 5 substitui o placeholder por NFT Detail e inclusão básica no carrinho.
+Fases 0 e 1 preservadas; fase 2 adiciona backend simulado, persistência e cenários; fase 3 adiciona o Design System. A Fase 4 acrescenta Home/Catálogo com leitura HTTP; a Fase 5 substitui o placeholder por NFT Detail e inclusão básica no carrinho. A Fase 6 acrescenta login, cadastro e ciclo de sessão com isolamento de cache.
 
 ```text
 UI → hooks/features → TanStack Query → Axios → REST → MSW → MockDatabase
@@ -218,7 +218,7 @@ Edição e quantidade são estado local de intenção, reiniciado ao mudar o NFT
 
 `features/cart` contém somente API e hook reutilizáveis de inclusão. O POST recebe nftId/editionId/quantity, e o servidor resolve owner por cookie e valida estoque acumulado no carrinho. Não há carrinho em estado local nem reserva de estoque ao adicionar. Durante a mutation os controles ficam bloqueados; sucesso e falha usam InlineAlert. Não há retry automático de mutation, conforme a política existente. OUT_OF_STOCK invalida a query do NFT.
 
-A resposta invalida a chave de carrinho do owner retornado, sem popular cache privado com uma resposta tardia. Não foi criada consulta/página de carrinho nem UI de sessão. A fase de autenticação continuará responsável por proteger transições de identidade e efeitos pendentes. Favoritos permanecem explicitamente desabilitados; autenticação, optimistic update/rollback e reconciliação dessa feature ficam para as fases respectivas.
+A resposta invalida a chave de carrinho do owner retornado, sem popular cache privado com uma resposta tardia. Na Fase 5, não foi criada consulta/página de carrinho nem UI de sessão. A Fase 6 implementa a proteção das transições de identidade e dos efeitos pendentes, descrita abaixo. Favoritos permanecem explicitamente desabilitados; optimistic update/rollback e reconciliação dessa feature ficam para sua etapa específica.
 
 ### Limites e validação
 
@@ -234,4 +234,28 @@ A composição usa as três referências de detalhes complementares; não exibe 
 
 O detalhe continua em chunk lazy próprio (~18,23 kB / 5,99 kB gzip), com componentes compartilhados extraídos pelo bundler. O bundle principal (~593 kB / 188 kB gzip) mantém o warning pré-existente de 500 kB; não foi aumentado o limite. Nenhuma dependência nova, alteração de backend, baseline visual final ou execução de Lighthouse.
 
-Relatório local: `playwright-report/index.html`. Capturas: `test-results/nft-detail-direct-detail-*/detail.png` e `detail-content.png`. Nenhum commit automático. Próxima etapa: **FASE 6 — Auth**, não iniciada.
+Relatório local: `playwright-report/index.html`. Capturas: `test-results/nft-detail-direct-detail-*/detail.png` e `detail-content.png`. Nenhum commit automático. Na entrega da Fase 5, a próxima etapa era Auth; sua implementação está descrita abaixo.
+
+## Auth / Session — Fase 6
+
+- **Fonte da sessão:** `sessionKeys.all` e `sessionOptions` concentram GET /auth/session. Header, páginas de Auth e composição de NFT Detail compartilham a consulta; não existe Context duplicando usuário nem storage de sessão na UI. Cache/retries seguem a foundation; durante mutations de autenticação, consultas de sessão aguardam a transição.
+- **Transições:** `sessionLifecycle`, criado junto aos serviços, guarda somente uma versão de transição e coordenação de requests, não dados do usuário. Login/cadastro cancelam leituras antigas, aplicam a resposta do servidor e removem dados privados anteriores. Logout só confirma a limpeza após 204; falha preserva a sessão conhecida. Reconciliação com outra identidade também limpa o cache privado.
+- **Respostas antigas:** Axios registra a versão no início do request e descarta respostas privadas de versões anteriores. 401 antigo não encerra uma sessão nova. O add-to-cart verifica a versão antes de publicar resultado; o painel de aquisição é reiniciado ao mudar a identidade. Queries privadas continuam usando userId; o grupo visitante permanece separado.
+- **Limpeza:** `clearPrivateQueries` centraliza cancelamento/remoção de queries privadas, descarte de mutations anteriores e limpeza dos listeners existentes. Mutations de autenticação em andamento são preservadas durante seu próprio commit. `clearSessionCache` também cancela a consulta de sessão e define null. Catálogo permanece em cache; login/cadastro apenas invalidam o cache visitante após o merge já executado pelo backend.
+- **401 e navegação:** o interceptor distingue login/register de requests com sessão. INVALID_CREDENTIALS não dispara redirect global. Expiração atual limpa sessão e chama o callback registrado pelo Router, que usa navigate com reason=expired e retorno validado. Login/register não se redirecionam em loop. Network/5xx permanecem erros de consulta, distintos de null/401.
+- **Guard e retorno:** `requireSession(services, href)` recebe os serviços do contexto, aguarda transições e consulta o QueryClient antes de decidir. Ausência de sessão gera redirect; indisponibilidade propaga erro recuperável. `safeReturnTo` aceita Home, detalhe e destinos privados previstos (checkout, perfil/carteiras e pedidos), preservando search/hash. Rejeita origem externa, barras invertidas, controles, caminhos desconhecidos e login/register. Os destinos privados ainda não têm páginas nesta fase.
+- **Formulários:** RHF usa schemas existentes; cadastro acrescenta somente confirmação local. Payloads são enviados via Axios. Credenciais ficam em referência transitória consumida pela mutation, que não recebe variáveis com senha. Referência/campos são limpos após a tentativa; erros normalizados não carregam config Axios. Conflitos de e-mail e fieldErrors são associados aos inputs, com foco após reabilitar o formulário.
+- **Apresentação:** rotas lazy usam Dialog existente, fundo composto de Hero/NFTCard e dados públicos da API. Foi acrescentado closeDisabled ao Dialog e composto PasswordInput com os primitives existentes. Foco, Escape, labels, autocomplete, campos obrigatórios, controle de senha e rolagem em viewport baixo foram validados. Social/recuperação não têm sucesso fictício.
+- **Escopo:** nenhum contrato, handler, fixture ou banco foi refeito. O merge visitante permanece autoritativo no backend. Não há perfil, checkout, carteiras, pedidos, favoritos completos ou realtime novos. Testes do guard usam a infraestrutura HTTP existente, sem novas rotas de produto apenas para testes.
+
+### Verificação final da Fase 6
+
+`npm run check` aprovado: TypeScript, ESLint sem warnings e build de produção. `npm test`: **198 testes aprovados** na execução completa (10,1 minutos), sem retries — 140 anteriores e 58 novos (54 verificações de Auth em navegador, três de foundation e uma integração HTTP do guard).
+
+Foram validados login/cadastro reais por HTTP, confirmação local de senha, conflito 409, credenciais inválidas, rede/500/retry, bloqueio de duplo envio, restauração após refresh, logout confirmado/falho, A → B → A, expiração/401, rejeição de respostas antigas, redirects internos e preservação do carrinho visitante. A regressão inclui Home, filtros, paginação, detalhe, backend e Design System. O setup do teste de detalhe agora aguarda a consulta inicial de sessão antes do reset do mock, evitando um conflito de reset pendente; as verificações de console foram mantidas.
+
+Login e cadastro foram inspecionados em 390/768/1440px. Os testes verificaram foco, teclado, autocomplete, erros associados aos campos, toggle de senha, ausência de overflow horizontal e CTA acessível com viewport de 500px de altura. As capturas foram comparadas às referências locais; não constituem baseline visual definitiva, e o teclado virtual físico não foi testado.
+
+Auth permanece em chunk lazy (~41,42 kB / 14,80 kB gzip); o principal ficou em ~337,78 kB / 107,56 kB gzip. O build atual não emite warning de chunk acima de 500 kB; isso não substitui a avaliação final de performance. Nenhuma dependência, contrato, handler ou fixture foi alterado nesta fase. Sem Lighthouse ou realtime.
+
+Relatório: `playwright-report/index.html`. Capturas: `test-results/auth-direct-Login-and-Regi-*/login.png` e `register.png`. Login social e recuperação de senha continuam indisponíveis por não terem endpoints. Próxima etapa: **FASE 7 — Carrinho**, não iniciada. Nenhum commit automático; sugestão: `feat(auth): implement authentication and session flows`.

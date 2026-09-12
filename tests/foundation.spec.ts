@@ -85,3 +85,89 @@ test('normalizes timeouts and network errors without exposing internal error tex
   expect(normalizeApiError(new AxiosError('internal', 'ERR_NETWORK')).code).toBe('NETWORK_ERROR')
   expect(normalizeApiError(new Error('internal')).message).not.toContain('internal')
 })
+
+test('auth return URLs preserve internal context and reject external or cyclic destinations', async () => {
+  const { safeReturnTo, authSearchSchema } = await import('../src/features/auth/redirect')
+  expect(authSearchSchema.parse({})).toEqual({ redirect: '/' })
+  for (const unsafe of ['https://evil.example', '//evil.example', '/\\evil.example', '/login', '/register?redirect=/login', '/not-a-route', '/nfts/%2f%2fevil', '/nfts/%255cevil', '/checkout\n', '/%00', null]) {
+    expect(safeReturnTo(unsafe)).toBe('/')
+  }
+  for (const safe of ['/?collection=golden&page=3#catalog', '/nfts/nft-001?q=Golden%20Ape#details', '/checkout?step=review', '/account/profile', '/account/wallets', '/orders/order-1']) {
+    expect(safeReturnTo(safe)).toBe(safe)
+  }
+})
+
+test('session transitions remove private caches, preserve public and guest data, and reject stale completion', async () => {
+  const { createSessionLifecycle } = await import('../src/features/auth/session-lifecycle')
+  const client = new QueryClient()
+  const lifecycle = createSessionLifecycle(client, () => {})
+  const session = (id: string) => ({ user: { id, name: id, email: id + '@example.com', avatarUrl: null }, expiresAt: '2027-01-01T00:00:00.000Z' })
+  client.setQueryData(sessionKeys.all, session('a'))
+  client.setQueryData(nftKeys.detail('nft-001'), { name: 'Public NFT' })
+  const guest = cartKeys.detail({ kind: 'guest', id: 'guest-1' })
+  client.setQueryData(guest, { items: ['guest item'] })
+  for (const destination of ['b', 'a']) {
+    const previous = client.getQueryData<{ user: { id: string } }>(sessionKeys.all)!.user.id
+    client.setQueryData(privateKeys.favorites(previous), { nftIds: ['private-' + previous] })
+    client.setQueryData(privateKeys.profile(previous), { name: previous })
+    client.setQueryData(privateKeys.wallets(previous), { wallets: ['private wallet'] })
+    client.setQueryData(privateKeys.orders(previous), { orders: ['private order'] })
+    client.setQueryData(cartKeys.detail({ kind: 'user', id: previous }), { items: ['private cart'] })
+    const transition = await lifecycle.begin()
+    await lifecycle.commit(session(destination), transition.version)
+    transition.finish()
+    expect(client.getQueriesData({ queryKey: privateKeys.all })).toEqual([])
+    expect(client.getQueryData(sessionKeys.all)).toEqual(session(destination))
+  }
+  const oldVersion = lifecycle.current()
+  let expirationRedirects = 0
+  lifecycle.onExpired(() => { expirationRedirects++ })
+  lifecycle.expire(oldVersion)
+  lifecycle.expire(oldVersion)
+  expect(expirationRedirects).toBe(1)
+  expect(client.getQueryData(sessionKeys.all)).toBeNull()
+  await expect(lifecycle.commit(session('b'), oldVersion)).rejects.toBeInstanceOf(CanceledError)
+  expect(client.getQueryData(nftKeys.detail('nft-001'))).toEqual({ name: 'Public NFT' })
+  expect(client.getQueryData(guest)).toEqual({ items: ['guest item'] })
+  client.clear()
+})
+
+test('Axios excludes invalid login from global expiration and ignores stale private 401 responses', async () => {
+  const { createApiClient } = await import('../src/api/client')
+  let version = 0
+  let expirations = 0
+  const api = createApiClient({ baseURL: '/api', timeoutMs: 1000, sessionVersion: () => version }, () => { expirations++ })
+  api.defaults.adapter = async (config) => {
+    throw new AxiosError('Unauthorized', 'ERR_BAD_REQUEST', config, undefined, {
+      status: 401, statusText: 'Unauthorized', config, headers: {},
+      data: { code: 'INVALID_CREDENTIALS', message: 'Invalid credentials' },
+    })
+  }
+  await expect(api.post('/auth/login', { email: 'a@example.com', password: 'wrong' })).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' })
+  expect(expirations).toBe(0)
+  let sendLate!: () => void
+  let started!: () => void
+  const requestStarted = new Promise<void>((resolve) => { started = resolve })
+  api.defaults.adapter = (config) => new Promise((_resolve, reject) => {
+    sendLate = () => reject(new AxiosError('Expired', 'ERR_BAD_REQUEST', config, undefined, {
+      status: 401, statusText: 'Unauthorized', config, headers: {},
+      data: { code: 'SESSION_EXPIRED', message: 'Expired' },
+    }))
+    started()
+  })
+  const late = api.get('/profile').catch((error: unknown) => error)
+  await requestStarted
+  version++
+  sendLate()
+  expect(await late).toBeInstanceOf(CanceledError)
+  expect(expirations).toBe(0)
+  const current = api.get('/profile').catch((error: unknown) => error)
+  // The adapter signals readiness for this request through a fresh promise.
+  await new Promise<void>((resolve) => {
+    const original = started
+    started = () => { original(); resolve() }
+  })
+  sendLate()
+  expect(await current).toMatchObject({ code: 'SESSION_EXPIRED' })
+  expect(expirations).toBe(1)
+})

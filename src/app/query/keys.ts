@@ -2,7 +2,7 @@ import type { CartOwner } from '@/contracts/cart'
 import type { CatalogSearch } from '@/contracts/nft'
 import type { QuoteInput } from '@/contracts/quote'
 
-export const sessionKeys = { all: ['session'] as const }
+export const sessionKeys = { all: ['session'] as const, mutations: ['session', 'mutation'] as const }
 export const nftKeys = {
   all: ['nfts'] as const,
   lists: () => ['nfts', 'list'] as const,
@@ -19,6 +19,7 @@ export const privateKeys = {
   order: (userId: string, orderId: string) => ['private', userId, 'orders', orderId] as const,
 }
 export const cartKeys = {
+  guests: ['guest'] as const,
   detail: (owner: CartOwner) => owner.kind === 'user'
     ? [...privateKeys.user(owner.id), 'cart'] as const
     : ['guest', owner.id, 'cart'] as const,

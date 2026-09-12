@@ -381,3 +381,28 @@ test('retired template artwork migrates without resetting accounts, prices or or
   expect(restored.users).toEqual(before.users)
   expect(restored.orders).toEqual(before.orders)
 })
+
+test('private guard restores HTTP session, preserves return URL and distinguishes expiration from server failure', async () => {
+  const { QueryClient } = await import('@tanstack/react-query')
+  const { createSessionLifecycle } = await import('../src/features/auth/session-lifecycle')
+  const { requireSession } = await import('../src/features/auth/require-session')
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const services = { api, queryClient: client, sessionLifecycle: createSessionLifecycle(client, () => {}) }
+  const destination = '/checkout?step=review#payment'
+  await expect(requireSession(services, destination)).rejects.toMatchObject({
+    options: { to: '/login', search: { redirect: destination } },
+  })
+  await login(api)
+  expect((await requireSession(services, destination)).user.id).toBe('user-1')
+  const cacheData = client.getQueryCache().getAll().map((query) => query.state.data)
+  expect(JSON.stringify(cacheData)).not.toContain('Jungle123!')
+  expect(JSON.stringify(cacheData)).not.toContain('passwordHash')
+  await api.patch('/__mock/scenario', { scenario: 'session-expired' })
+  await api.post('/__mock/clock/advance', { milliseconds: 1001 })
+  await expect(requireSession(services, destination)).rejects.toMatchObject({
+    options: { to: '/login', search: { redirect: destination } },
+  })
+  await api.patch('/__mock/scenario', { scenario: 'server-error' })
+  await expect(requireSession(services, destination)).rejects.toMatchObject({ status: 500, code: 'SERVICE_UNAVAILABLE' })
+  client.clear()
+})

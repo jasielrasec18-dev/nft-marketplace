@@ -1,17 +1,19 @@
 import { createApiClient } from '@/api/client'
 import { createQueryClient } from './query/client'
-import { clearSessionCache } from './query/clear-session'
 import { createMarketplaceSocket } from './socket'
+import { createSessionLifecycle } from '@/features/auth/session-lifecycle'
 import { env } from './env'
 
 export function createAppServices() {
   const queryClient = createQueryClient()
   const socket = createMarketplaceSocket()
-  const clearSession = () => clearSessionCache(queryClient, () => {
+  const sessionLifecycle = createSessionLifecycle(queryClient, () => {
     socket.removeAllListeners()
     socket.disconnect()
   })
-  const api = createApiClient({ baseURL: env.apiBaseUrl, timeoutMs: env.apiTimeoutMs }, () => { void clearSession() })
-  return { queryClient, socket, api, clearSession }
+  const api = createApiClient({
+    baseURL: env.apiBaseUrl, timeoutMs: env.apiTimeoutMs, sessionVersion: sessionLifecycle.current,
+  }, (_error, version) => sessionLifecycle.expire(version))
+  return { queryClient, socket, api, sessionLifecycle, clearSession: sessionLifecycle.clear }
 }
 export type AppServices = ReturnType<typeof createAppServices>

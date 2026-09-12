@@ -20,7 +20,9 @@ const add = (page: Page) => page.getByRole('button', { name: 'Adicionar ao carri
 const related = (page: Page) => page.getByRole('list', { name: 'NFTs relacionados' })
 
 test.beforeEach(async ({ page }) => {
+  const initialSession = page.waitForResponse((res) => new URL(res.url()).pathname === '/api/auth/session')
   await page.goto('/design-system')
+  await (await initialSession).finished()
   await expect(page.getByRole('heading', { name: 'Design System', exact: true })).toBeVisible({ timeout: 15000 })
   await control(page, 'POST', '/__mock/reset', { scenario: 'default', latencyMs: 0, now: '2026-09-10T12:00:00.000Z' })
 })

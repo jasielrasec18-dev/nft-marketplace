@@ -1,6 +1,7 @@
 import { Link, useParams, useSearch } from '@tanstack/react-router'
 import { ArrowLeft, RefreshCw } from 'lucide-react'
 import { ApiError } from '@/api/errors'
+import { useSession } from '@/features/auth/hooks/use-session'
 import { Button } from '@/components/ui/button'
 import { ErrorState } from '@/components/feedback/error-state'
 import { InlineAlert } from '@/components/feedback/inline-alert'
@@ -15,6 +16,7 @@ export function NFTDetailPage() {
   const { nftId } = useParams({ from: '/nfts/$nftId' })
   const search = useSearch({ from: '/nfts/$nftId' })
   const query = useNft(nftId)
+  const session = useSession()
   const back = <Button asChild variant="link" className="px-0"><Link to="/" search={search} hash="catalog"><ArrowLeft aria-hidden="true" />Voltar ao catálogo</Link></Button>
   const notFound = query.error instanceof ApiError && query.error.status === 404
   if (notFound) return <ErrorState headingLevel={1} title="NFT não encontrado" description="Esta obra não está disponível no catálogo. Explore outros NFTs." action={back} />
@@ -32,7 +34,7 @@ export function NFTDetailPage() {
       {query.isError && <InlineAlert variant="warning">Não foi possível atualizar. Os dados anteriores continuam visíveis. <Button variant="link" onClick={() => void query.refetch()}>Tentar novamente</Button></InlineAlert>}
       <div className="grid items-start gap-4 md:grid-cols-2 md:gap-6 lg:gap-10" data-testid="nft-detail-content">
         <NFTGallery key={`gallery-${nft.id}`} nft={nft} />
-        <NFTPurchasePanel key={`purchase-${nft.id}`} nft={nft} />
+        <NFTPurchasePanel key={`purchase-${nft.id}-${session.data?.user.id ?? 'guest'}`} nft={nft} />
       </div>
     </div>
     <NFTDetails nft={nft} />

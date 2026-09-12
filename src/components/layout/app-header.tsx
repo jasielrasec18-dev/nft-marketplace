@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { SessionActions } from '@/features/auth/components/session-actions'
 import { Link } from '@tanstack/react-router'
 import { BookOpen, Compass, Home, Menu, ShoppingCart, UserRound } from 'lucide-react'
 import { PageContainer } from '@/components/layout/page-container'
@@ -15,11 +16,11 @@ export function AppHeader() {
         <Link to="/" search hash="catalog" className="inline-flex min-h-11 items-center text-sm">Mercado</Link>
         <Link to="/" search hash="journal" className="inline-flex min-h-11 items-center text-sm">Aprenda</Link>
       </nav>
-      <div className="hidden items-center gap-3 lg:flex"><Button disabled variant="ghost" size="icon" aria-label="Carrinho — em breve"><ShoppingCart /></Button><Button disabled size="sm">Entrar · em breve</Button></div>
+      <div className="hidden items-center gap-3 lg:flex"><Button disabled variant="ghost" size="icon" aria-label="Carrinho — em breve"><ShoppingCart /></Button><SessionActions /></div>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild><Button variant="ghost" size="icon" className="lg:hidden" aria-label="Abrir menu"><Menu /></Button></SheetTrigger>
         <SheetContent><SheetTitle>KURIO</SheetTitle><SheetDescription>Arte, criadores e cultura.</SheetDescription>
-          <nav aria-label="Navegação mobile" className="mt-8 space-y-3"><Link to="/" onClick={() => setOpen(false)} className="flex min-h-11 items-center text-primary">Início</Link><Link to="/" search hash="catalog" onClick={() => setOpen(false)} className="flex min-h-11 items-center">Mercado</Link><Link to="/" search hash="journal" onClick={() => setOpen(false)} className="flex min-h-11 items-center">Aprenda</Link></nav>
+          <nav aria-label="Navegação mobile" className="mt-8 space-y-3"><Link to="/" onClick={() => setOpen(false)} className="flex min-h-11 items-center text-primary">Início</Link><Link to="/" search hash="catalog" onClick={() => setOpen(false)} className="flex min-h-11 items-center">Mercado</Link><Link to="/" search hash="journal" onClick={() => setOpen(false)} className="flex min-h-11 items-center">Aprenda</Link></nav><div className="mt-6"><SessionActions onNavigate={() => setOpen(false)} /></div>
         </SheetContent>
       </Sheet>
     </PageContainer>

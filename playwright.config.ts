@@ -15,9 +15,9 @@ export default defineConfig({
   projects: [
     { name: 'mock-backend', testMatch: /mock-backend\.spec\.ts/ },
     { name: 'foundation', testMatch: /foundation\.spec\.ts/ },
-    { name: 'desktop-chromium', testMatch: /(?:smoke|mock-browser|design-system|catalog|nft-detail)\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
-    { name: 'tablet-chromium', testMatch: /(?:smoke|mock-browser|design-system|catalog|nft-detail)\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 768, height: 1024 } } },
-    { name: 'mobile-chromium', testMatch: /(?:smoke|mock-browser|design-system|catalog|nft-detail)\.spec\.ts/, use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 } } },
+    { name: 'desktop-chromium', testMatch: /(?:smoke|mock-browser|design-system|catalog|nft-detail|auth)\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
+    { name: 'tablet-chromium', testMatch: /(?:smoke|mock-browser|design-system|catalog|nft-detail|auth)\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 768, height: 1024 } } },
+    { name: 'mobile-chromium', testMatch: /(?:smoke|mock-browser|design-system|catalog|nft-detail|auth)\.spec\.ts/, use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 } } },
   ],
   webServer: {
     command: 'npm run dev:mock -- --host 127.0.0.1 --port 4173 --strictPort',

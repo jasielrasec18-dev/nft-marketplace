@@ -6,10 +6,15 @@ import type { CartItemInput } from '@/contracts/cart'
 import { addCartItem } from '../api/add-cart-item'
 
 export function useAddCartItem() {
-  const { api } = useServices()
+  const { api, sessionLifecycle } = useServices()
   const client = useQueryClient()
   return useMutation({
-    mutationFn: (input: CartItemInput) => addCartItem(api, input),
+    mutationFn: async (input: CartItemInput) => {
+      const version = sessionLifecycle.current()
+      const cart = await addCartItem(api, input)
+      sessionLifecycle.assertCurrent(version)
+      return cart
+    },
     onSuccess: (cart) => {
       // The server resolves guest/user ownership. Do not seed private caches from a late response.
       void client.invalidateQueries({ queryKey: cartKeys.detail(cart.owner) })

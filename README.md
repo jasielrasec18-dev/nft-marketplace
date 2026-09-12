@@ -1,6 +1,6 @@
 # NFT Marketplace — Jungle Gaming
 
-Implementação do [Frontend Challenge da Jungle Gaming](https://github.com/junglegaming/frontend-challenge), com React e TypeScript. **Estado atual: fases 0 a 5 concluídas — fundação, backend simulado, Design System, Home/Catálogo e NFT Detail.** Home e detalhe consomem a API simulada; o detalhe inclui adição básica ao carrinho visitante.
+Implementação do [Frontend Challenge da Jungle Gaming](https://github.com/junglegaming/frontend-challenge), com React e TypeScript. **Estado atual: fases 0 a 6 implementadas — fundação, backend simulado, Design System, Home/Catálogo, NFT Detail e Auth/Session.** Home, detalhe e autenticação consomem a API simulada; o detalhe inclui adição básica ao carrinho, com merge do visitante após login.
 
 O enunciado oficial define os comportamentos; o [Figma](https://www.figma.com/design/Ff0SksUi7UFtPWUO8kyNtw/Frontend-Challenge?node-id=0-1&p=f) define a referência visual.
 
@@ -125,7 +125,7 @@ tests/           # fundação, backend HTTP e smoke/persistência em navegador
 
 A Home consome `TanStack Query → Axios → REST → MSW`. Fixtures não são importadas por componentes, hooks, páginas ou serviços de aplicação.
 
-Tecnologias configuradas: React, TypeScript, Vite, TanStack Router/Query, Axios, Tailwind v4, shadcn/ui, MSW, Playwright, Zod e big.js. React Hook Form/resolvers, Lucide e socket.io-client estão preparados para as próximas features.
+Tecnologias configuradas: React, TypeScript, Vite, TanStack Router/Query, Axios, Tailwind v4, shadcn/ui, MSW, Playwright, Zod e big.js. React Hook Form/resolvers atendem os formulários de Auth; Lucide fornece os ícones. socket.io-client permanece preparado para a fase de realtime.
 
 Decisões detalhadas: [ARCHITECTURE.md](ARCHITECTURE.md). README original do template: [docs/VITE-TEMPLATE.md](docs/VITE-TEMPLATE.md).
 
@@ -133,11 +133,11 @@ Decisões detalhadas: [ARCHITECTURE.md](ARCHITECTURE.md). README original do tem
 
 A fase 2 não implementa as telas, integração do cache com mutations, eventos Socket.IO, regressão visual ou Lighthouse. Os pagamentos evoluem pelo relógio simulado e são reconciliados na próxima chamada REST ou pelo controle de relógio. Não há emissão de eventos falsos para a interface.
 
-A simulação é local a uma instância da aplicação; não é um servidor compartilhado entre navegadores/abas. Os tokens e dados locais não constituem autenticação de produção. Os assets individuais das obras ainda são provisórios no backend; os tokens da UI foram refinados na Fase 3. O aviso de bundle principal acima de 500 kB continua como pendência da fase de performance.
+A simulação é local a uma instância da aplicação; não é um servidor compartilhado entre navegadores/abas. Os tokens e dados locais não constituem autenticação de produção. Os assets individuais das obras ainda são provisórios no backend; os tokens da UI foram refinados na Fase 3. Os avisos de bundle das fases anteriores estão registrados no histórico; a validação da Fase 6 descreve o build atual. A avaliação final de performance permanece para a fase correspondente.
 
 Para testar o build: `npm run build:mock` e `npm run preview`. O deploy final precisará servir `dist/` por HTTPS e tratar URLs de páginas como SPA. Publicação e Lighthouse pertencem às fases posteriores.
 
-**Próxima etapa: FASE 6 — Auth.**
+**Próxima etapa: FASE 7 — Carrinho. Não iniciada.**
 
 ## Validação da fase 2
 
@@ -191,7 +191,7 @@ A tela reutiliza galeria com imagem quadrada, ETHPrice, controles de edição/qu
 
 Edições sem estoque são identificadas como esgotadas e desabilitadas. A quantidade começa em 1, respeita o estoque da edição e volta a 1 ao trocar edição. Refetch limita a quantidade ao novo estoque; edição esgotada bloqueia a inclusão. Preços preservam strings decimais, inclusive um wei.
 
-**Adicionar ao carrinho** executa `POST /api/cart/items`. O backend identifica visitante/usuário por cookie; nenhuma identidade é criada pela UI. Há estado pendente, confirmação HTTP e erro acessível; conflito de estoque renova o detalhe. A inclusão não reserva estoque. A página/revisão do carrinho pertence à fase correspondente. Favoritos permanecem desabilitados e identificados como futuros, pois dependem da autenticação; não há favorito fictício nem optimistic update antecipado.
+**Adicionar ao carrinho** executa `POST /api/cart/items`. O backend identifica visitante/usuário por cookie; nenhuma identidade é criada pela UI. Há estado pendente, confirmação HTTP e erro acessível; conflito de estoque renova o detalhe. A inclusão não reserva estoque. A página/revisão do carrinho pertence à fase correspondente. Favoritos permanecem desabilitados e identificados como futuros, pois sua implementação completa pertence a uma etapa posterior; não há favorito fictício nem optimistic update antecipado.
 
 Estados disponíveis: skeleton inicial, 404 específico, erro de rede/servidor com retry, refetch mantendo conteúdo, falha em background, edição indisponível e NFT esgotado. Relacionados usam a consulta REST de catálogo filtrada pela coleção, excluem a obra atual e exibem até cinco cards com navegação real.
 
@@ -218,4 +218,36 @@ As referências `desktop-detalhes-nft-1/2` e `mobile-detalhesdanft-nft-1` guiara
 
 O detalhe continua em chunk lazy próprio (~18,23 kB / 5,99 kB gzip), com componentes compartilhados extraídos pelo bundler. O bundle principal (~593 kB / 188 kB gzip) mantém o warning pré-existente de 500 kB; não foi aumentado o limite. Nenhuma dependência nova, alteração de backend, baseline visual final ou execução de Lighthouse.
 
-Relatório local: `playwright-report/index.html`. Capturas: `test-results/nft-detail-direct-detail-*/detail.png` e `detail-content.png`. Nenhum commit automático. Próxima etapa: **FASE 6 — Auth**, não iniciada.
+Relatório local: `playwright-report/index.html`. Capturas: `test-results/nft-detail-direct-detail-*/detail.png` e `detail-content.png`. Nenhum commit automático. Na entrega da Fase 5, a próxima etapa era Auth; sua implementação está descrita abaixo.
+
+## Auth / Session — Fase 6
+
+`/login` e `/register` são rotas lazy com Dialog acessível. O desktop usa Hero/cards reais como fundo; mobile prioriza o formulário, com altura flexível e rolagem. Os seis screenshots de login/cadastro foram analisados; Figma permaneceu inacessível. Login social e recuperação de senha não existem no backend e aparecem como indisponíveis.
+
+Login e cadastro usam React Hook Form, Zod e os endpoints existentes. Cadastro envia somente nome, e-mail e senha; confirmação de senha fica na validação da UI. Ambos recebem sessão real do mock e concluem a navegação. Senhas são limpas após a tentativa, não são gravadas pela UI em storage e não são passadas como variáveis da mutation no cache. O backend continua persistindo apenas sua representação de demonstração com hash/salt.
+
+A sessão é consultada por `GET /auth/session`, compartilhada no TanStack Query e restaurada após refresh. O Header mostra carregamento neutro, acesso de visitante ou nome/logout; no mobile, as ações ficam no menu. Falha de rede/servidor mantém estado de erro/indeterminado com **Verificar sessão**, sem fingir logout.
+
+Exemplo de retorno:
+
+```text
+/login?redirect=%2Fnfts%2Fnft-002%3Fq%3Dpanther%26collection%3Djungle%26sort%3Dname%26page%3D1
+```
+
+Login ↔ cadastro preserva o destino. Retornos externos, caminhos desconhecidos e ciclos para login/cadastro são rejeitados. Usuários já autenticados seguem para o destino validado; sem destino, usam a Home. Search params e hash são preservados, com a normalização já existente do Router.
+
+Logout usa `POST /auth/logout` e só limpa a sessão após confirmação. Se falhar, a sessão permanece visível e o usuário pode tentar novamente. Um 401 de sessão expirada limpa dados privados e abre Login com o contexto anterior; credenciais inválidas ficam no formulário. A expiração é decidida pelo servidor nas consultas/operações HTTP, sem timer baseado no relógio local.
+
+Dados privados são removidos nas transições; consultas públicas são preservadas. O carrinho visitante é mesclado pelo backend existente no login/cadastro, e apenas sua representação em cache é invalidada. A página de carrinho e favoritos completos permanecem nas próximas fases. O guard `requireSession` está pronto para os `beforeLoad` das rotas privadas futuras, com teste de integração HTTP; não foram criadas páginas privadas fictícias.
+
+### Verificação final da Fase 6
+
+`npm run check` aprovado: TypeScript, ESLint sem warnings e build de produção. `npm test`: **198 testes aprovados** na execução completa (10,1 minutos), sem retries — 140 anteriores e 58 novos (54 verificações de Auth em navegador, três de foundation e uma integração HTTP do guard).
+
+Foram validados login/cadastro reais por HTTP, confirmação local de senha, conflito 409, credenciais inválidas, rede/500/retry, bloqueio de duplo envio, restauração após refresh, logout confirmado/falho, A → B → A, expiração/401, rejeição de respostas antigas, redirects internos e preservação do carrinho visitante. A regressão inclui Home, filtros, paginação, detalhe, backend e Design System. O setup do teste de detalhe agora aguarda a consulta inicial de sessão antes do reset do mock, evitando um conflito de reset pendente; as verificações de console foram mantidas.
+
+Login e cadastro foram inspecionados em 390/768/1440px. Os testes verificaram foco, teclado, autocomplete, erros associados aos campos, toggle de senha, ausência de overflow horizontal e CTA acessível com viewport de 500px de altura. As capturas foram comparadas às referências locais; não constituem baseline visual definitiva, e o teclado virtual físico não foi testado.
+
+Auth permanece em chunk lazy (~41,42 kB / 14,80 kB gzip); o principal ficou em ~337,78 kB / 107,56 kB gzip. O build atual não emite warning de chunk acima de 500 kB; isso não substitui a avaliação final de performance. Nenhuma dependência, contrato, handler ou fixture foi alterado nesta fase. Sem Lighthouse ou realtime.
+
+Relatório: `playwright-report/index.html`. Capturas: `test-results/auth-direct-Login-and-Regi-*/login.png` e `register.png`. Login social e recuperação de senha continuam indisponíveis por não terem endpoints. Próxima etapa: **FASE 7 — Carrinho**, não iniciada. Nenhum commit automático; sugestão: `feat(auth): implement authentication and session flows`.
