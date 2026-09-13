@@ -19,7 +19,7 @@ export function createPersistence(storage: MockStorage) {
         const isTemplate = (url: string) => /(?:^|\/)hero(?:-[\w-]+)?\.png(?:$|\?)/.test(url)
         const currentArtwork = (url: string, collection: string) => isTemplate(url)
           ? demoArtwork(collection)
-          : /^\/artwork\/(?:golden|jungle|cosmic|pixel|default)\.svg$/.test(url) ? url.replace(/\.svg$/, '.png') : url
+          : /^\/artwork\/(?:golden|jungle|cosmic|pixel|default)\.(svg|png)$/.test(url) ? url.replace(/\.(svg|png)$/, '-768.webp') : url
         for (const nft of database.nfts) {
           nft.imageUrl = currentArtwork(nft.imageUrl, nft.collection)
           nft.gallery = nft.gallery.map((url) => currentArtwork(url, nft.collection))

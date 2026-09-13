@@ -31,3 +31,8 @@ dist-ssr
 playwright-report/
 test-results/
 reports/
+
+!reports/
+reports/*
+!reports/lighthouse/
+reports/lighthouse/diagnostic/

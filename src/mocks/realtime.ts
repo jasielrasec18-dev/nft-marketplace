@@ -11,12 +11,14 @@ import { isoNow, now } from './utils/clock'
 export function createRealtimeMock(store: MockDatabaseStore, socketUrl: string, apiBase: string) {
   const url = new URL(socketUrl)
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
-  url.pathname = '/socket.io/'
+  // MSW 2.15 normalizes Socket.IO's /socket.io/ transport path to /.
+  url.pathname = '/'
   const endpoint = ws.link(url.href)
   type Connection = { io: ReturnType<typeof toSocketIo>; request: Request; orders: Set<string>; heartbeat: ReturnType<typeof setInterval> }
   const connections = new Set<Connection>()
   let paused = false
   let delivered = 0
+  let privateDelivered = 0
   const history: ({ kind: 'nft.updated'; data: NFTUpdatedEvent } | { kind: 'order.updated'; data: OrderUpdatedEvent })[] = []
   function owner(connection: Connection) {
     try { return currentUser(store.read(), connection.request, false)?.id } catch { return undefined }
@@ -27,6 +29,7 @@ export function createRealtimeMock(store: MockDatabaseStore, socketUrl: string, 
       if (event.kind === 'order.updated' && (owner(connection) !== event.data.userId || !connection.orders.has(event.data.orderId))) continue
       connection.io.client.emit(event.kind, event.data)
       delivered++
+      if (event.kind === 'order.updated') privateDelivered++
     }
   }
   const handler = endpoint.addEventListener('connection', (connection) => {
@@ -69,7 +72,7 @@ export function createRealtimeMock(store: MockDatabaseStore, socketUrl: string, 
     }),
     http.post(`${apiBase}/__mock/realtime/reconnect`, () => { paused = false; return HttpResponse.json({ paused }) }),
     http.post(`${apiBase}/__mock/realtime/replay`, () => { for (const event of [...history].reverse()) emit(event, false); return HttpResponse.json({ replayed: history.length }) }),
-    http.get(`${apiBase}/__mock/realtime/status`, () => HttpResponse.json({ connections: connections.size, delivered, paused, retained: history.length })),
+    http.get(`${apiBase}/__mock/realtime/status`, () => HttpResponse.json({ connections: connections.size, delivered, privateDelivered, subscriptions: [...connections].reduce((sum, connection) => sum + connection.orders.size, 0), paused, retained: history.length })),
   ]
   return { handlers: [handler, ...controls], dispose() {
     clearInterval(timer); stopObserving()

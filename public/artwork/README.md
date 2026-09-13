@@ -1,3 +1,5 @@
-# Ilustrações de demonstração
+# Artes de demonstração
 
-Quatro SVGs originais construídos em código nesta fase: Golden Ape, Jungle Panther, Cosmic Owl e Pixel Fox. São substitutos visuais locais dos colecionáveis simulados; não são assets oficiais, exportações do Figma ou recortes de screenshots. Mantêm dimensões de 480 × 480 sem fontes, scripts ou recursos externos. As URLs são fornecidas pela API mock. Substituir pelos assets oficiais quando disponíveis.
+Os PNGs locais existentes são as fontes preservadas das artes usadas pela demo; não são exportações oficiais do Figma. Os SVGs anteriores permanecem como arquivos legados.
+
+`node scripts/optimize-artwork.mjs` gera derivados WebP de 384 e 768 px, qualidade 82, sem recriar as imagens. A API fornece a versão de 768 px; componentes principais usam srcset. URLs antigas conhecidas são migradas na leitura da persistência, preservando imagens customizadas.

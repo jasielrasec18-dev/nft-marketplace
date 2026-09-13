@@ -12,6 +12,7 @@ export function useCartQuote(cart: Cart, couponCode: string | null, generation: 
   const { api, sessionLifecycle, realtime } = useServices()
   useSyncExternalStore(realtime.subscribe, realtime.snapshot)
   const liveFingerprint = realtime.fingerprint(cart.items.map((item) => item.nft.id))
+  const [initialLiveFingerprint] = useState(liveFingerprint)
   const client = useQueryClient()
   const [revision, setRevision] = useState(0)
   const last = useRef('')
@@ -50,6 +51,7 @@ export function useCartQuote(cart: Cart, couponCode: string | null, generation: 
   const error = mutation.variables?.fingerprint === fingerprint ? mutation.error : null
   return {
     quote: data?.quote,
+    updated: liveFingerprint !== initialLiveFingerprint,
     error,
     isPending: !error && !data || isPending,
     refresh: () => setRevision((value) => value + 1),

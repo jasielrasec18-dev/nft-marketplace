@@ -3,6 +3,7 @@ import { Heart, ImageOff } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ETHPrice } from '@/components/shared/eth-price'
+import { artworkSources } from '@/lib/artwork'
 
 type NFTCardProps = {
   name: string
@@ -19,7 +20,7 @@ export function NFTCard({ name, collection, image, price, soldOut, favorite = fa
   return <article className="nft-card group relative min-w-0">
     {renderLink(<>
       <div className="aspect-square overflow-hidden rounded-xl bg-card p-3 sm:rounded-md">
-        {image ? <img {...image} width={480} height={480} loading="lazy" decoding="async" className="aspect-square h-full w-full rounded-lg object-cover sm:rounded-sm" /> :
+        {image ? <img {...artworkSources(image.src, '(min-width: 1024px) 240px, (min-width: 768px) 30vw, 45vw')} {...image} width={480} height={480} loading="lazy" decoding="async" className="aspect-square h-full w-full rounded-lg object-cover sm:rounded-sm" /> :
           <div role="img" aria-label="Imagem da obra indisponível" className="flex h-full items-center justify-center rounded-lg bg-secondary text-muted-foreground"><ImageOff className="size-10" aria-hidden="true" /></div>}
       </div>
       <div className="space-y-1 pt-3">

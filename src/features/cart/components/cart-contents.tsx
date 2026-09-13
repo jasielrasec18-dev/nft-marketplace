@@ -15,6 +15,7 @@ export function CartContents({ cart, generation, refreshing, refreshError, refre
   const pending = refreshing || actions.isPending
   return <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_20rem]" data-testid="cart-content">
     <section aria-label="Itens do carrinho" className="min-w-0 space-y-3">
+      {quote.updated && <InlineAlert variant="warning">Preço ou disponibilidade atualizados. Revise os itens e a cotação antes de continuar.</InlineAlert>}
       <div className="flex flex-wrap items-center justify-between gap-2"><p className="type-small text-muted-foreground">{cart.items.reduce((sum, item) => sum + item.quantity, 0)} unidade(s)</p><Button variant="outline" size="sm" disabled={pending || (!refreshError && quote.isPending)} onClick={async () => { await refresh(); quote.refresh() }}>Atualizar carrinho</Button></div>
       <div aria-hidden="true" className="type-caption hidden grid-cols-[minmax(0,1fr)_7rem_8.5rem_8rem_2.75rem] gap-3 px-3 lg:grid"><span>NFTs</span><span>Preço</span><span>Quantidade</span><span>Total</span><span /></div>
       <ul className="space-y-3">{cart.items.map((item) => <CartItem key={item.id} item={item} pending={pending} line={quote.quote?.lines.find((line) => line.nftId === item.nftId && line.editionId === item.editionId)}

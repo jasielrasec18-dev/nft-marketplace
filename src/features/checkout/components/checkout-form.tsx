@@ -90,7 +90,7 @@ export function CheckoutForm({ cart, profile, wallets, refreshing, reloadCart }:
     {intent && <section aria-label="Retomar pedido" className="space-y-4 rounded-md border border-warning p-5"><h2 className="type-section">Retomar tentativa de compra</h2><p className="type-small">Existe uma tentativa ainda não concluída nesta aba. Recupere seu resultado antes de iniciar outra compra.</p>
       {intent.orderId ? <Button asChild><Link to="/orders/$orderId" params={{ orderId: intent.orderId }}>Ver pedido em andamento</Link></Button> : <Button disabled={busy} onClick={async () => { if (locked.current) return; locked.current = true; setError(undefined); try { await send(intent) } finally { locked.current = false } }}>{busy ? 'Recuperando pedido…' : 'Recuperar pedido'}</Button>}
     </section>}
-    {notice && <InlineAlert variant="warning">{notice}</InlineAlert>}
+    {(notice || quote.updated) && <InlineAlert variant="warning">{notice ?? 'Dados atualizados. Revise preço, disponibilidade e valores antes de confirmar.'}</InlineAlert>}
     {error && <InlineAlert variant="error">{error}</InlineAlert>}
     <form aria-label="Finalizar compra" noValidate onSubmit={(event) => { void form.handleSubmit(confirm)(event) }} className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_23rem]">
       <section className="min-w-0 space-y-6" aria-labelledby="collector-title"><h2 id="collector-title" className="type-section">Perfil do colecionador</h2>

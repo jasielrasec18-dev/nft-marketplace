@@ -210,6 +210,7 @@ test('price-changed renews API line prices and totals without realtime', async (
   await seed(page)
   await openCart(page)
   await ready(page)
+  await control(page, 'POST', '/__mock/realtime/disconnect')
   await control(page, 'PATCH', '/__mock/scenario', { scenario: 'price-changed' })
   const cart = await control<Cart>(page, 'GET', '/cart')
   await control(page, 'POST', '/quote', { cartId: cart.id, cartVersion: cart.version, couponCode: null, network: 'ethereum' })
@@ -264,14 +265,14 @@ test('logout clears private cart presentation and user B never sees user A items
   await expect(row(page, cart.items[0]!.nft.name)).toBeVisible()
 })
 
-test('visitor checkout connects, merges and returns to the protected handoff', async ({ page }) => {
+test('visitor checkout connects, merges and returns to protected payment', async ({ page }) => {
   await seed(page, 'nft-002', 2)
   await openCart(page)
   await ready(page)
   await summary(page).getByRole('link', { name: 'Conectar e finalizar' }).click()
   expect(new URL(page.url()).searchParams.get('redirect')).toBe('/checkout')
   await signIn(page)
-  await expect(page.getByRole('heading', { name: 'Finalização de compra', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Pagamento com carteira', exact: true })).toBeVisible()
   const cart = await control<Cart>(page, 'GET', '/cart')
   expect(cart.owner.kind).toBe('user')
   expect(cart.items.find((item) => item.nftId === 'nft-002')?.quantity).toBe(2)

@@ -1,4 +1,4 @@
-# API simulada — fase 2
+# API simulada
 
 Prefixo padrão /api. Payloads JSON; ETH sempre string decimal. Requests da aplicação passam pelo cliente Axios. Os handlers são compartilhados entre setupWorker (browser) e setupServer (testes Node).
 
@@ -141,3 +141,20 @@ Validação Zod inclui fieldErrors com arrays de mensagens por campo. A UI deve 
 Códigos principais: VALIDATION_ERROR (422), INVALID_JSON (400), INVALID_CREDENTIALS (401 no login), EMAIL_ALREADY_EXISTS (409), UNAUTHORIZED/SESSION_EXPIRED (401), NFT_NOT_FOUND/CART_ITEM_NOT_FOUND/QUOTE_NOT_FOUND/ORDER_NOT_FOUND/WALLET_NOT_FOUND (404), INVALID_EDITION (422), OUT_OF_STOCK/CART_CHANGED/QUOTE_CHANGED/QUOTE_EXPIRED/QUOTE_ALREADY_USED/IDEMPOTENCY_CONFLICT/ORDER_TERMINAL (409), INVALID_COUPON/EXPIRED_COUPON/NETWORK_MISMATCH (422), IDEMPOTENCY_KEY_REQUIRED (400), WALLET_ROLE_CONFLICT/WALLET_ALREADY_EXISTS (409).
 
 TIMEOUT e NETWORK_ERROR são normalizados pelo Axios quando não há resposta HTTP. MOCK_RESET (409) indica que uma request atrasada pertence à geração anterior do banco. Erros inesperados ou falha de persistência retornam INTERNAL_ERROR (500), sem expor detalhes internos.
+
+## Carteira e transporte em tempo real
+
+POST `/wallets/:id/connect`, autenticado: `{ decision: 'accept' | 'decline' }` retorna `{ walletId, network, status: 'connected' | 'declined' }`. Valida propriedade; simula autorização, sem blockchain e sem persistir uma conexão fictícia.
+
+Socket.IO usa o endereço VITE_SOCKET_URL, transport websocket, com binding MSW. Os eventos são derivados dos commits da mesma MockDatabase que atende REST. A assinatura `order.subscribe { orderId }` exige propriedade e sessão válida. `order.unsubscribe` remove a assinatura.
+
+| Controle do modo mock | Efeito |
+| --- | --- |
+| POST /__mock/realtime/disconnect | Fecha conexões e recusa reconexões temporariamente |
+| POST /__mock/realtime/reconnect | Permite a reconexão automática do cliente |
+| POST /__mock/realtime/replay | Reenvia histórico limitado, em ordem reversa, respeitando autorização |
+| GET /__mock/realtime/status | Contadores de conexões, assinaturas e entregas; sem payloads privados |
+
+Para simular preço/estoque em tempo real, use PATCH /__mock/nfts/:id. Para pedidos, use POST /__mock/orders/:id/settle com confirmed/declined ou avance o relógio. A UI recebe os frames reais do cliente Socket.IO e reconcilia por REST. Esses controles não existem quando os mocks estão desabilitados.
+
+Após reset completo, recarregue a página para reiniciar também os caches da aplicação e o ciclo de conexão.

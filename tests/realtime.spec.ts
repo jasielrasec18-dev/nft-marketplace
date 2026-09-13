@@ -2,14 +2,12 @@ import { test, expect, type Page } from '@playwright/test'
 async function control(page: Page, path: string, data?: unknown, method = 'POST') {
   return page.evaluate(async ({ path, data, method }) => {
     const response = await fetch('/api' + path, { method, credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: data === undefined ? undefined : JSON.stringify(data) })
-    return response.json()
+    return response.status === 204 ? null : response.json()
   }, { path, data, method })
 }
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('debug', 'socket.io-client:*,engine.io-client:*'))
-  page.on('console', (message) => console.log(message.text()))
   await page.goto('/design-system')
-  await expect(page.getByRole('heading', { name: 'Design System', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Design System', exact: true })).toBeVisible({ timeout: 15000 })
   await control(page, '/__mock/reset', { latencyMs: 0 })
 })
 test('real Socket.IO transport updates detail and ignores duplicate or older events', async ({ page }) => {
@@ -26,6 +24,7 @@ test('real Socket.IO transport updates detail and ignores duplicate or older eve
 })
 test('reconnection reconciles missed public changes through REST', async ({ page }) => {
   await page.goto('/nfts/nft-001')
+  await expect(page.getByTestId('nft-unit-price')).toHaveText('1.19 ETH')
   await expect.poll(async () => (await control(page, '/__mock/realtime/status', undefined, 'GET')).connections).toBe(1)
   await control(page, '/__mock/realtime/disconnect')
   await control(page, '/__mock/nfts/nft-001', { priceEth: '1.7' }, 'PATCH')
@@ -33,3 +32,30 @@ test('reconnection reconciles missed public changes through REST', async ({ page
   await control(page, '/__mock/realtime/reconnect')
   await expect(page.getByTestId('nft-unit-price')).toHaveText('1.7 ETH', { timeout: 15000 })
 })
+
+test('private order events respect ownership, terminal versions and reconnect reconciliation', async ({ page }) => {
+  await control(page, '/__mock/reset', { latencyMs: 0, now: '2026-09-12T12:00:00.000Z' })
+  await control(page, '/auth/login', { email: 'collector@example.com', password: 'Jungle123!' })
+  const cart = await control(page, '/cart', undefined, 'GET')
+  const quote = await control(page, '/quote', { cartId: cart.id, cartVersion: cart.version, couponCode: null, network: 'ethereum' })
+  const order = await page.evaluate(async (quote) => (await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ quoteId: quote.id, quoteVersion: quote.version, walletId: 'wallet-user-1', collector: { name: 'Alex Collector', email: 'collector@example.com' } }) })).json(), quote)
+  await page.goto('/orders/' + order.id)
+  await expect(page.getByRole('heading', { name: 'Pagamento em processamento' })).toBeVisible()
+  await expect.poll(async () => (await control(page, '/__mock/realtime/status', undefined, 'GET')).subscriptions).toBe(1)
+  await control(page, '/__mock/orders/' + order.id + '/settle', { status: 'confirmed' })
+  await expect(page.getByRole('heading', { name: 'Pedido confirmado', exact: true })).toBeVisible()
+  expect((await control(page, '/__mock/realtime/status', undefined, 'GET')).privateDelivered).toBeGreaterThan(0)
+  await control(page, '/__mock/realtime/replay')
+  await expect(page.getByRole('heading', { name: 'Pedido confirmado', exact: true })).toBeVisible()
+  await control(page, '/__mock/realtime/disconnect')
+  await control(page, '/__mock/realtime/reconnect')
+  await expect.poll(async () => (await control(page, '/__mock/realtime/status', undefined, 'GET')).subscriptions).toBe(1)
+  await control(page, '/auth/logout')
+  await control(page, '/auth/login', { email: 'second@example.com', password: 'Jungle123!' })
+  await page.goto('/orders/' + order.id)
+  await expect(page.getByRole('heading', { name: 'Pedido não encontrado', exact: true })).toBeVisible()
+  await expect.poll(async () => (await control(page, '/__mock/realtime/status', undefined, 'GET')).connections).toBe(1)
+  await control(page, '/__mock/realtime/replay')
+  expect((await control(page, '/__mock/realtime/status', undefined, 'GET')).privateDelivered).toBe(0)
+})
+

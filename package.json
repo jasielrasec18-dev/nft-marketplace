@@ -17,7 +17,10 @@
     "test:report": "playwright show-report",
     "msw:init": "msw init public --save",
     "check": "npm run typecheck && npm run lint && npm run build",
-    "test:mocks": "playwright test --project=mock-backend"
+    "test:mocks": "playwright test --project=mock-backend",
+    "lighthouse": "npm run build:mock && node scripts/lighthouse.mjs",
+    "test:visual": "playwright test tests/visual.spec.ts",
+    "test:a11y": "playwright test tests/accessibility.spec.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -68,7 +71,7 @@
     "vite": "^8.3.0"
   },
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.19.0"
   },
   "msw": {
     "workerDirectory": [

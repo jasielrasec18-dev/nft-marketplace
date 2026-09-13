@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { ImageOff } from 'lucide-react'
 import type { NFT } from '@/contracts/nft'
 import { Button } from '@/components/ui/button'
+import { artworkSources } from '@/lib/artwork'
 
 function Artwork({ src, name }: { src: string; name: string }) {
   const [failed, setFailed] = useState(false)
   return failed || !src
     ? <div role="img" aria-label="Imagem da obra indisponível" className="flex aspect-square items-center justify-center rounded-xl bg-secondary text-muted-foreground"><ImageOff className="size-12" aria-hidden="true" /></div>
-    : <img src={src} alt={name} width={480} height={480} fetchPriority="high" decoding="async" onError={() => setFailed(true)} className="aspect-square w-full rounded-xl object-cover sm:rounded-md" />
+    : <img src={src} {...artworkSources(src, '(min-width: 768px) 50vw, 90vw')} alt={name} width={480} height={480} fetchPriority="high" decoding="async" onError={() => setFailed(true)} className="aspect-square w-full rounded-xl object-cover sm:rounded-md" />
 }
 
 export function NFTGallery({ nft }: { nft: NFT }) {

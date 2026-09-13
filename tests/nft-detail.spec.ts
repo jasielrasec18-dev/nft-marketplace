@@ -192,6 +192,7 @@ test('guest add-to-cart waits for HTTP confirmation and survives refresh', async
 test('server rejects stale stock and the detail reconciles without reporting success', async ({ page }) => {
   await page.goto('/nfts/nft-001')
   await expect(title(page)).toBeVisible()
+  await control(page, 'POST', '/__mock/realtime/disconnect')
   await control(page, 'PATCH', '/__mock/nfts/nft-001', { availableQuantity: 0 })
   await add(page).click()
   await expect(purchase(page).getByRole('alert')).toContainText('Estoque insuficiente')
