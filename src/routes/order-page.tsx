@@ -16,14 +16,20 @@ import { ApiError } from '@/api/errors'
 function OrderContent() {
   const { orderId } = useParams({ from: '/orders/$orderId' })
   const { userId, generation } = useAccountIdentity()
-  const { queryClient, socket } = useServices()
+  const { queryClient, getSocket } = useServices()
   const query = useOrder(orderId)
   const order = query.data
   useEffect(() => {
-    const subscribe = () => socket.emit('order.subscribe', { orderId })
-    subscribe(); socket.on('connect', subscribe)
-    return () => { socket.off('connect', subscribe); if (socket.connected) socket.emit('order.unsubscribe', { orderId }) }
-  }, [socket, orderId])
+    let active = true
+    let detach: (() => void) | undefined
+    void getSocket().then((socket) => {
+      if (!active) return
+      const subscribe = () => socket.emit('order.subscribe', { orderId })
+      subscribe(); socket.on('connect', subscribe)
+      detach = () => { socket.off('connect', subscribe); if (socket.connected) socket.emit('order.unsubscribe', { orderId }) }
+    })
+    return () => { active = false; detach?.() }
+  }, [getSocket, orderId])
   useEffect(() => {
     if (!order || order.status === 'pending') return
     clearIntent(userId, order.id)

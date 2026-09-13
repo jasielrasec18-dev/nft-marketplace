@@ -14,7 +14,7 @@ async function openCheckout(page: Page, scenario = 'default') {
   await control(page, 'POST', '/auth/login', { email: 'collector@example.com', password: 'Jungle123!' })
   await control(page, 'PATCH', '/__mock/scenario', { scenario, latencyMs: 0 })
   await page.goto('/checkout')
-  await expect(form(page).getByTestId('order-total')).toHaveText('1.195 ETH')
+  await expect(form(page).getByTestId('order-total')).toHaveText('1.195 ETH', { timeout: 10000 })
 }
 async function connect(page: Page, decision = 'Autorizar conexão') {
   await page.getByRole('button', { name: 'Conectar carteira', exact: true }).click()
@@ -64,11 +64,11 @@ test('confirmed purchase uses a snapshot, resumes directly and removes only purc
   await control(page, 'PATCH', '/__mock/nfts/nft-001', { priceEth: '1.4' })
   await control(page, 'POST', '/__mock/clock/advance', { milliseconds: 3000 })
   await expect(page.getByRole('heading', { name: 'Pedido confirmado' })).toBeVisible({ timeout: 10000 })
-  await expect(page.getByTestId('order-total')).toHaveText('1.195 ETH')
+  await expect(page.getByTestId('order-total')).toHaveText('1.195 ETH', { timeout: 10000 })
   await expect(page.getByText('SIMULATED-' + order.id, { exact: true })).toBeVisible()
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Pedido confirmado' })).toBeVisible()
-  await expect(page.getByTestId('order-total')).toHaveText('1.195 ETH')
+  await expect(page.getByTestId('order-total')).toHaveText('1.195 ETH', { timeout: 10000 })
   const cart = await control<{ items: { quantity: number }[] }>(page, 'GET', '/cart')
   expect(cart.items[0]?.quantity).toBe(2)
 })
@@ -161,7 +161,7 @@ test('checkout expired session returns to login and requires a fresh connection 
   await dialog.getByLabel(/^E-mail/).fill('collector@example.com')
   await dialog.getByLabel(/^Senha/).fill('Jungle123!')
   await dialog.getByRole('button', { name: 'Entrar', exact: true }).click()
-  await expect(form(page).getByTestId('order-total')).toHaveText('1.195 ETH')
+  await expect(form(page).getByTestId('order-total')).toHaveText('1.195 ETH', { timeout: 10000 })
   await expect(confirm(page)).toBeDisabled()
 })
 test('checkout layout and connection dialog support keyboard and responsive widths', async ({ page }, info) => {

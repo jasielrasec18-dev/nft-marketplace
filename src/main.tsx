@@ -1,24 +1,24 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { env } from '@/app/env'
 import '@/styles/globals.css'
 
 async function bootstrap() {
-  // Download independent UI modules while MSW starts. Socket.IO itself is
-  // imported afterward so its transport captures the intercepted WebSocket.
+  // Keep the entry independent of React/Zod so the worker download starts
+  // alongside the UI, instead of waiting for the interface dependency tree.
+  const renderer = Promise.all([import('react'), import('react-dom/client')])
+  const application = import('./App')
   const views = Promise.all([
     import('@/app/router'),
     location.pathname === '/' ? import('@/routes/home-page')
       : location.pathname.startsWith('/nfts/') ? import('@/routes/nft-detail-page') : Promise.resolve(),
   ])
-  const mocks = env.mocksEnabled
+  const mocks = import.meta.env.VITE_MOCK_ENABLED === 'true'
     ? import('@/mocks/browser').then(({ startMockWorker }) => startMockWorker())
     : Promise.resolve()
   await Promise.all([views, mocks])
-  const { default: App } = await import('./App')
+  // Requests start after the worker; the socket module loads on first connection.
+  const [{ default: App }, [{ StrictMode, createElement }, { createRoot }]] = await Promise.all([application, renderer])
   const root = document.getElementById('root')
   if (!root) throw new Error('Elemento root não encontrado.')
-  createRoot(root).render(<StrictMode><App /></StrictMode>)
+  createRoot(root).render(createElement(StrictMode, null, createElement(App)))
 }
 void bootstrap().catch(() => {
   const root = document.getElementById('root')

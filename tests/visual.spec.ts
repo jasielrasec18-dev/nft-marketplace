@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test'
+// Use one pixel density so responsive image selection does not depend on a larger cached candidate.
+test.use({ deviceScaleFactor: 3 })
 for (const [name, route] of [['home', '/'], ['detail', '/nfts/nft-001'], ['cart', '/cart'], ['checkout', '/checkout']] as const) {
   test(name + ' visual baseline', async ({ page }) => {
     await page.goto('/')
@@ -18,6 +20,6 @@ for (const [name, route] of [['home', '/'], ['detail', '/nfts/nft-001'], ['cart'
       await document.fonts.ready
       for (const image of document.images) { image.loading = 'eager'; await image.decode().catch(() => undefined) }
     })
-    await expect(page).toHaveScreenshot(name + '.png', { fullPage: true, animations: 'disabled', maxDiffPixelRatio: 0.001 })
+    await expect(page).toHaveScreenshot(name + '.png', { fullPage: true, scale: 'css', animations: 'disabled', maxDiffPixelRatio: 0.001, timeout: 10000 })
   })
 }

@@ -176,8 +176,9 @@ for (const scenario of ['network-error', 'server-error'] as const) {
 test('slow cart, quote and mutation expose pending states without duplicate quantity writes', async ({ page }) => {
   await seed(page)
   await control(page, 'PATCH', '/__mock/scenario', { scenario: 'slow-network', latencyMs: null })
-  await openCart(page)
-  await expect(page.getByRole('status', { name: 'Carregando carrinho', exact: true })).toBeVisible()
+  // Direct navigation starts with a fresh query cache; header prefetch may warm SPA navigation.
+  await page.goto('/cart', { waitUntil: 'domcontentloaded' })
+  await expect(page.getByRole('status', { name: 'Carregando carrinho', exact: true })).toBeVisible({ timeout: 10000 })
   await expect(page.getByRole('status', { name: 'Carregando resumo', exact: true })).toBeVisible()
   await ready(page)
   let patches = 0

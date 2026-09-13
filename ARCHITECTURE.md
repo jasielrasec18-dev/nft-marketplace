@@ -8,7 +8,7 @@ React → hooks/features → TanStack Query → Axios → REST → MSW → MockD
 React ← cache/invalidação ← Socket.IO client ← WebSocket/MSW binding
 ```
 
-A UI não importa fixtures nem o banco dos mocks; o ESLint protege essa fronteira. HTTP e WebSocket usam a mesma instância de MockDatabase. Somente o bootstrap importa os mocks, antes da aplicação e do cliente Socket.IO.
+A UI não importa fixtures nem o banco dos mocks; o ESLint protege essa fronteira. HTTP e WebSocket usam a mesma instância de MockDatabase. Somente o bootstrap importa os mocks, em paralelo aos módulos da interface. A renderização e os requests aguardam o worker. O cliente Socket.IO carrega sob demanda quando a sessão está pronta para conectar.
 
 ## Organização
 

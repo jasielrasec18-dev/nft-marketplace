@@ -13,7 +13,7 @@ const nftEvent = resource.extend({ nftId: z.string(), priceEth: ethAmountSchema,
 const orderEvent = resource.extend({ orderId: z.string(), userId: z.string(), status: z.enum(['pending', 'confirmed', 'declined']) })
 
 export function RealtimeBridge() {
-  const { socket, queryClient: client, sessionLifecycle, realtime } = useServices()
+  const { getSocket, queryClient: client, sessionLifecycle, realtime } = useServices()
   const session = useSession()
   const changing = useIsMutating({ mutationKey: sessionKeys.mutations }) > 0
   const userId = session.data?.user.id
@@ -64,14 +64,20 @@ export function RealtimeBridge() {
       }
       connectedOnce = true
     }
-    socket.on('nft.updated', onNFT)
-    socket.on('order.updated', onOrder)
-    socket.on('connect', onConnect)
-    socket.connect()
-    return () => {
-      socket.off('nft.updated', onNFT); socket.off('order.updated', onOrder); socket.off('connect', onConnect)
-      socket.disconnect(); privateVersions.clear()
-    }
-  }, [client, generation, ready, realtime, sessionLifecycle, socket, userId])
+    let active = true
+    let detach: (() => void) | undefined
+    void getSocket().then((socket) => {
+      if (!active || !current()) return
+      socket.on('nft.updated', onNFT)
+      socket.on('order.updated', onOrder)
+      socket.on('connect', onConnect)
+      socket.connect()
+      detach = () => {
+        socket.off('nft.updated', onNFT); socket.off('order.updated', onOrder); socket.off('connect', onConnect)
+        socket.disconnect()
+      }
+    })
+    return () => { active = false; detach?.(); privateVersions.clear(); privateEventIds.clear() }
+  }, [client, generation, ready, realtime, sessionLifecycle, getSocket, userId])
   return null
 }

@@ -14,6 +14,7 @@ export default defineConfig({
       output: {
         codeSplitting: {
           groups: [
+            { name: 'preload', test: (id) => id.includes('preload-helper'), priority: 100 },
             { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)([\\/]|$)/, priority: 40 },
             { name: 'validation', test: /node_modules[\\/]zod[\\/]/, priority: 30 },
             { name: 'interface', test: /node_modules[\\/](@radix-ui|lucide-react|class-variance-authority|clsx|tailwind-merge)[\\/]/, priority: 20 },

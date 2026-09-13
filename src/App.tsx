@@ -8,8 +8,7 @@ const router = createAppRouter(services)
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
-    services.socket.removeAllListeners()
-    services.socket.disconnect()
+    services.disconnectSocket()
     services.queryClient.clear()
   })
 }

@@ -56,7 +56,7 @@ Esta entrega prepara os arquivos para deploy. A atualização da publicação de
 | VITE_MOCK_SCENARIO | default | Cenário de uma base nova |
 | VITE_SOCKET_URL | http://localhost:3001 | Endereço Socket.IO |
 
-No modo mock, Socket.IO usa `https://socket.jungle.test`, interceptado localmente; não existe serviço externo nesse endereço. A aplicação é importada depois do MSW para o cliente capturar o WebSocket interceptado.
+No modo mock, Socket.IO usa `https://socket.jungle.test`, interceptado localmente; não existe serviço externo nesse endereço. Os módulos da interface e do MSW carregam em paralelo. A renderização aguarda o worker; o cliente Socket.IO carrega sob demanda depois da restauração de sessão e captura o WebSocket interceptado.
 
 Use `.env.example` apenas como referência para personalização. Valores em `.env.local` podem sobrescrever o modo mock. O cenário persistido tem precedência sobre a env.
 
@@ -103,7 +103,7 @@ npm run lighthouse
 | node scripts/optimize-artwork.mjs | Regenerar derivados WebP dos PNGs originais |
 | npm run msw:init | Atualizar worker após atualização do MSW |
 
-Baselines em `tests/visual.spec.ts-snapshots`, geradas no Chromium/Windows. Atualize com `npm run test:visual -- --update-snapshots` somente após inspecionar mudanças intencionais. Fontes do sistema podem variar entre plataformas.
+Baselines em `tests/visual.spec.ts-snapshots`, geradas no Chromium/Windows, com densidade 3 e captura em pixels CSS para manter a seleção de WebP consistente entre execuções. Atualize com `npm run test:visual -- --update-snapshots` somente após inspecionar mudanças intencionais. Fontes do sistema podem variar entre plataformas.
 
 Lighthouse mede Home e detalhe em desktop/mobile, três vezes cada, com configurações oficiais e contexto novo por execução. HTML/JSON e medianas ficam em [reports/lighthouse](reports/lighthouse). O comando falha se as medianas ficarem abaixo de Performance 90, Accessibility 95, Best Practices 95 ou SEO 90. Não execute junto com testes pesados.
 

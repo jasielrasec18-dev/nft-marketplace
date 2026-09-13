@@ -1,0 +1,71 @@
+{
+  "recordedAt": "2026-09-13T15:18:14.384Z",
+  "method": "Full suite followed by explicit affected-case verification; not a second full-suite run.",
+  "fullSuite": {
+    "command": "npm test -- --workers=2",
+    "startTime": "2026-09-13T10:30:10.244Z",
+    "duration": 1511965.8120000002,
+    "expected": 410,
+    "skipped": 0,
+    "unexpected": 6,
+    "flaky": 0
+  },
+  "verification": {
+    "command": "npm test -- --grep \"visual baseline|WCAG|slow cart, quote|wallet server failure|new account has|wallet pending save|real Socket.IO|reconnection reconciles|private order events\" --workers=2",
+    "startTime": "2026-09-13T15:14:40.527Z",
+    "duration": 183651.25400000002,
+    "expected": 36,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "resolvedCases": [
+    {
+      "file": "accessibility.spec.ts",
+      "title": "main journeys have no WCAG A/AA violations and reflow at narrow width",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "initialStatus": "unexpected"
+    },
+    {
+      "file": "account.spec.ts",
+      "title": "wallet server failure keeps the draft and confirmed list until successful retry",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "initialStatus": "unexpected"
+    },
+    {
+      "file": "cart.spec.ts",
+      "title": "slow cart, quote and mutation expose pending states without duplicate quantity writes",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "initialStatus": "unexpected"
+    },
+    {
+      "file": "cart.spec.ts",
+      "title": "slow cart, quote and mutation expose pending states without duplicate quantity writes",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "initialStatus": "unexpected"
+    },
+    {
+      "file": "visual.spec.ts",
+      "title": "home visual baseline",
+      "project": "desktop-chromium",
+      "status": "expected",
+      "initialStatus": "unexpected"
+    },
+    {
+      "file": "visual.spec.ts",
+      "title": "home visual baseline",
+      "project": "tablet-chromium",
+      "status": "expected",
+      "initialStatus": "unexpected"
+    }
+  ],
+  "consolidated": {
+    "total": 416,
+    "passed": 416,
+    "unresolved": 0
+  }
+}
