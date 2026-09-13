@@ -91,6 +91,6 @@ No reconnect, invalidam-se catálogo, detalhe, carrinho corrente e pedidos priva
 
 Tokens CSS/Tailwind v4 seguem a referência marrom/âmbar e fonte monoespaçada do sistema. Primitivas Radix fornecem foco, teclado e semântica de dialogs/selects. Formulários usam labels, mensagens associadas, estados pendentes, erros e skeletons. Layouts são testados em 390/768/1440 px, com reflow adicional a 320 px.
 
-Rotas são carregadas sob demanda. Artes derivadas WebP em 384/768 px têm dimensões explícitas e srcset; hero/detalhe priorizam imagem principal e cards usam lazy loading. PNGs de origem permanecem no projeto.
+Rotas são carregadas sob demanda. Artes derivadas WebP em 384/768 px têm dimensões explícitas e srcset; hero/detalhe priorizam imagem principal e cards usam lazy loading. PNGs de origem permanecem no projeto. A detecção de classes do Tailwind é limitada a src; relatórios HTML não acrescentam utilitários ao CSS de produção.
 
 Vercel compila a demo com MSW e aplica fallback SPA. Lighthouse executa build otimizado com presets oficiais, contexto novo por rodada, três medições por página/perfil e medianas, preservando HTML/JSON. Resultados e aceite estão em [FINAL-REPORT](docs/FINAL-REPORT.md).

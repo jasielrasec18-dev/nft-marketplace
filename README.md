@@ -100,6 +100,7 @@ npm run lighthouse
 | npm run test:a11y | Auditoria axe WCAG A/AA e reflow |
 | npm run test:report | Abrir relatório Playwright |
 | npm run lighthouse | Build otimizado + 12 medições reais |
+| node scripts/verify-preview.mjs | Validar o dist existente: rotas/refresh, MSW e eventos Socket.IO |
 | node scripts/optimize-artwork.mjs | Regenerar derivados WebP dos PNGs originais |
 | npm run msw:init | Atualizar worker após atualização do MSW |
 

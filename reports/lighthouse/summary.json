@@ -1,0 +1,198 @@
+{
+  "measuredAt": "2026-09-13T20:12:55.535Z",
+  "runs": 3,
+  "lighthouse": "13.4.1",
+  "node": "v24.20.0",
+  "results": [
+    {
+      "page": "home",
+      "profile": "desktop",
+      "run": 1,
+      "performance": 89,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100,
+      "lcp": 1452.4125000000001,
+      "cls": 0.005483106558094737,
+      "tbt": 138
+    },
+    {
+      "page": "home",
+      "profile": "desktop",
+      "run": 2,
+      "performance": 96,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100,
+      "lcp": 1134.80475,
+      "cls": 0.005483106558094737,
+      "tbt": 18.5
+    },
+    {
+      "page": "home",
+      "profile": "desktop",
+      "run": 3,
+      "performance": 96,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100,
+      "lcp": 1168.825,
+      "cls": 0.005483106558094737,
+      "tbt": 20.5
+    },
+    {
+      "page": "home",
+      "profile": "mobile",
+      "run": 1,
+      "performance": 76,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100,
+      "lcp": 4016.404,
+      "cls": 0,
+      "tbt": 222.99999999999977
+    },
+    {
+      "page": "home",
+      "profile": "mobile",
+      "run": 2,
+      "performance": 78,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100,
+      "lcp": 3960.304,
+      "cls": 0,
+      "tbt": 205.5
+    },
+    {
+      "page": "home",
+      "profile": "mobile",
+      "run": 3,
+      "performance": 78,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100,
+      "lcp": 3962.032,
+      "cls": 0,
+      "tbt": 203
+    },
+    {
+      "page": "detail",
+      "profile": "desktop",
+      "run": 1,
+      "performance": 98,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100,
+      "lcp": 1011.5862500000001,
+      "cls": 0.026644035384379653,
+      "tbt": 44.32374999999993
+    },
+    {
+      "page": "detail",
+      "profile": "desktop",
+      "run": 2,
+      "performance": 97,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100,
+      "lcp": 970.9752500000001,
+      "cls": 0.03323174132810904,
+      "tbt": 18.002749999999992
+    },
+    {
+      "page": "detail",
+      "profile": "desktop",
+      "run": 3,
+      "performance": 98,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100,
+      "lcp": 992.4,
+      "cls": 0.03323174132810904,
+      "tbt": 0
+    },
+    {
+      "page": "detail",
+      "profile": "mobile",
+      "run": 1,
+      "performance": 80,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100,
+      "lcp": 4014.386,
+      "cls": 0,
+      "tbt": 206.32675000000017
+    },
+    {
+      "page": "detail",
+      "profile": "mobile",
+      "run": 2,
+      "performance": 81,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100,
+      "lcp": 4017.002,
+      "cls": 0,
+      "tbt": 183
+    },
+    {
+      "page": "detail",
+      "profile": "mobile",
+      "run": 3,
+      "performance": 80,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100,
+      "lcp": 4023.534,
+      "cls": 0,
+      "tbt": 206.43324999999982
+    }
+  ],
+  "medians": [
+    {
+      "page": "home",
+      "profile": "desktop",
+      "performance": 96,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100,
+      "lcp": 1168.825,
+      "cls": 0.005483106558094737,
+      "tbt": 20.5
+    },
+    {
+      "page": "home",
+      "profile": "mobile",
+      "performance": 78,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100,
+      "lcp": 3962.032,
+      "cls": 0,
+      "tbt": 205.5
+    },
+    {
+      "page": "detail",
+      "profile": "desktop",
+      "performance": 98,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100,
+      "lcp": 992.4,
+      "cls": 0.03323174132810904,
+      "tbt": 18.002749999999992
+    },
+    {
+      "page": "detail",
+      "profile": "mobile",
+      "performance": 80,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100,
+      "lcp": 4017.002,
+      "cls": 0,
+      "tbt": 206.32675000000017
+    }
+  ]
+}
