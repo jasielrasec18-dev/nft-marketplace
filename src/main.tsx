@@ -22,6 +22,9 @@ async function bootstrap() {
 }
 void bootstrap().catch((error) => {
   console.error('Falha ao inicializar a aplicação:', error)
+  if (error && typeof error === 'object' && 'issues' in error) {
+    console.error('Detalhes do erro de validação (Zod):', (error as { issues: unknown }).issues)
+  }
   const root = document.getElementById('root')
   if (root) {
     const message = document.createElement('p')

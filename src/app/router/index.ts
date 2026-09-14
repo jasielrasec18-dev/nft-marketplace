@@ -1,11 +1,21 @@
 import { createRootRouteWithContext, createRoute, createRouter, lazyRouteComponent, type SearchSchemaInput } from '@tanstack/react-router'
 import type { AppServices } from '@/app/services'
 import { catalogSearchSchema } from '@/contracts/nft'
+import { defaultCatalogSearch } from '@/features/catalog/catalog-state'
 import { authSearchSchema, safeReturnTo } from '@/features/auth/redirect'
 import { requireSession } from '@/features/auth/require-session'
 import { AppLayout } from '@/components/layout/app-layout'
 import { RouteError } from '@/components/feedback/route-error'
 import { NotFoundPage } from '@/routes/not-found-page'
+
+const parseCatalogSearch = (search: Record<string, unknown> & SearchSchemaInput) => {
+  const result = catalogSearchSchema.safeParse(search)
+  return result.success ? result.data : defaultCatalogSearch
+}
+const parseAuthSearch = (search: Record<string, unknown> & SearchSchemaInput) => {
+  const result = authSearchSchema.safeParse(search)
+  return result.success ? result.data : { redirect: '/', reason: undefined }
+}
 
 const rootRoute = createRootRouteWithContext<AppServices>()({
   component: AppLayout,
@@ -15,25 +25,25 @@ const rootRoute = createRootRouteWithContext<AppServices>()({
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  validateSearch: (search: Record<string, unknown> & SearchSchemaInput) => catalogSearchSchema.parse(search),
+  validateSearch: parseCatalogSearch,
   component: lazyRouteComponent(() => import('@/routes/home-page'), 'HomePage'),
 })
 const nftRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/nfts/$nftId',
-  validateSearch: (search: Record<string, unknown> & SearchSchemaInput) => catalogSearchSchema.parse(search),
+  validateSearch: parseCatalogSearch,
   component: lazyRouteComponent(() => import('@/routes/nft-detail-page'), 'NFTDetailPage'),
 })
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
-  validateSearch: (search: Record<string, unknown> & SearchSchemaInput) => authSearchSchema.parse(search),
+  validateSearch: parseAuthSearch,
   component: lazyRouteComponent(() => import('@/routes/auth-page'), 'LoginPage'),
 })
 const registerRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/register',
-  validateSearch: (search: Record<string, unknown> & SearchSchemaInput) => authSearchSchema.parse(search),
+  validateSearch: parseAuthSearch,
   component: lazyRouteComponent(() => import('@/routes/auth-page'), 'RegisterPage'),
 })
 const cartRoute = createRoute({
