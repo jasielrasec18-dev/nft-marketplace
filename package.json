@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --mode mock",
     "dev:mock": "vite --mode mock",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build --mode mock",
     "build:mock": "tsc -b && vite build --mode mock",
     "preview": "vite preview",
     "typecheck": "tsc -b",

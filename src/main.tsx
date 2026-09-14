@@ -20,7 +20,8 @@ async function bootstrap() {
   if (!root) throw new Error('Elemento root não encontrado.')
   createRoot(root).render(createElement(StrictMode, null, createElement(App)))
 }
-void bootstrap().catch(() => {
+void bootstrap().catch((error) => {
+  console.error('Falha ao inicializar a aplicação:', error)
   const root = document.getElementById('root')
   if (root) {
     const message = document.createElement('p')
